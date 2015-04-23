@@ -1,5 +1,5 @@
-(function(){
-
+var _ = require('lodash')
+var machina = require('machina')
 
 function propStore (initialProps) {
 	var store = _.merge({}, initialProps)
@@ -153,7 +153,6 @@ function createElevator(_props) {
 	return new ElevatorFsm()
 }
 
-window.createElevator = createElevator
 
 // -- helpers (stateless) -----------------------------------------------------
 
@@ -167,4 +166,5 @@ function storeyTravelDuration(direction, hardware) {
 	// @todo use hardware.cabinWeight, hardware.tractionForce, hardware.counterWeight
 }
 
-}())
+
+exports.createElevator = createElevator

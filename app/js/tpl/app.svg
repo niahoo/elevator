@@ -1,0 +1,36 @@
+<svg>
+	<style type="text/css">
+		#storeys rect {
+			fill:none;
+			stroke:black;
+			stroke-width:1px;
+		}
+		rect#elevator {
+			fill:none;
+			stroke:black;
+			stroke-width:1px;
+		}
+		svg {
+			height: 1000px;
+			width:800px;
+		}
+	</style>
+
+	<g transform="translate(30,30)">
+
+		<!-- storeys -->
+		<g id="storeys">
+			{{#storeys}}
+				<rect width="{{width}}" height="{{height}}" x="{{x}}" y="{{getStoreyY(i)}}" />
+			{{/storeys}}
+		</g>
+
+		<rect id="elevator"
+			width="{{elv.width}}"
+			height="{{elv.height}}"
+			x="{{elv.x}}"
+			y="{{elv.y}}" />
+
+
+	</g>
+</svg>

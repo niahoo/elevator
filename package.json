@@ -1,0 +1,33 @@
+{
+  "name": "elevator",
+  "version": "1.0.0",
+  "description": "An elevator simulation",
+  "main": "app/js/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niahoo/elevator.git"
+  },
+  "keywords": [
+    "simulation",
+    "game",
+    "elevator"
+  ],
+  "author": "niahoo <dev@ooha.in>",
+  "license": "none",
+  "bugs": {
+    "url": "https://github.com/niahoo/elevator/issues"
+  },
+  "homepage": "https://github.com/niahoo/elevator",
+  "dependencies": {
+    "lodash": "^3.7.0",
+    "machina": "^1.0.0",
+    "ractive": "^0.7.2"
+  },
+  "devDependencies": {
+    "dotenv": "^1.1.0",
+    "ractive-loader": "^0.5.6"
+  }
+}
