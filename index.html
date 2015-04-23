@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en-GB">
+<meta charset="utf-8">
+<title>Ractive test</title>
+
+<style type="text/css">
+	#storeys rect {
+		fill:none;
+		stroke:black;
+		stroke-width:1px;
+	}
+	rect#elevator {
+		fill:none;
+		stroke:black;
+		stroke-width:1px;
+	}
+	svg {
+		height: 1000px;
+		width:800px;
+	}
+</style>
+
+<h1>Ractive test</h1>
+
+<!--
+1. This is the element we"ll render our Ractive to.
+-->
+
+
+<button onclick="ractive.changeElevatorPosition(0)">RC</button>
+<button onclick="ractive.changeElevatorPosition(1)">1</button>
+<button onclick="ractive.changeElevatorPosition(2)">2</button>
+<div id="container"></div>
+
+<!--
+2. You can load a template in many ways. For convenience, we"ll include it in
+a script tag so that we don"t need to mess around with AJAX or multiline strings.
+Note that we"ve set the type attribute to "text/ractive" - though it can be
+just about anything except "text/javascript"
+-->
+<script id="template" type="text/ractive">
+	<svg>
+
+		<g transform="translate(30,30)">
+
+			<!-- storeys -->
+			<g id="storeys">
+				{{#storeys:i}}
+					<rect width="{{width}}" height="{{height}}" x="{{x}}" y="{{getStoreyY(i)}}" />
+				{{/storeys}}
+			</g>
+
+			<rect id="elevator"
+				width="{{elv.width}}"
+				height="{{elv.height}}"
+				x="{{elv.x}}"
+				y="{{elv.y}}" />
+
+
+		</g>
+	</svg>
+</script>
+
+<!--
+3. You can always get the most recent stable version from the URL below.
+If you want the newest features (unstable!), use the "edge" version instead:
+
+http://cdn.ractivejs.org/edge/ractive.min.js
+
+If you need IE8 support, change "ractive" to "ractive-legacy".
+-->
+<script src="lodash.min.js"></script>
+<!-- <script src="machina.min.js"></script> -->
+<script src="machina.js"></script>
+<script src="ractive.min.js"></script>
+<script src="elevator.js"></script>
+
+<!--
+4. We"ve got an element in the DOM, we"ve created a template, and we"ve
+loaded the library - now it"s time to build our Hello World app.
+-->
+<script>
+
+var CONF = {
+	storeyHeight: 100,
+	storeyWidth: 200,
+	storeySpacing: 12,
+	initialStoreyCount: 3,
+	initialElevatorPostion: 0, // it's a storey index
+	buildingX: 20,
+	buildingWallThickness: 5,
+	svgHeight: 1000,
+	svgWidth: 400,
+	elevatorHeight:70,
+	elevatorWidth:100,
+	storeyElevatorSpacing:10, // horizontal spacing,
+	storeyTravelDuration: {
+		down:500,
+		up:700
+	}
+}
+
+CONF.elevatorX = CONF.buildingX + CONF.buildingWallThickness + CONF.storeyWidth + CONF.storeyElevatorSpacing
+
+/**
+* Returns a storey's bounding box. Svg vertical coordinates are descending
+* @param  {0..} index   the storey's index
+* @param  {1..} amt     the total number of storeys (= max index + 1)
+ * @return {integer}       y coordinate
+*/
+function getStoreyY(index, amt) {
+	var maxIndex = amt - 1
+	var sa = maxIndex - index // count of storeys above
+	var y = CONF.buildingWallThickness + (sa * CONF.storeyHeight) + (sa * CONF.storeySpacing)
+	return y
+}
+
+/**
+ * Get the elevator Y position when at a storey
+ * @param  {integer} index The storey's index the elevator is at
+ * @param  {integer} amt   The total number of storeys
+ * @return {integer}       y coordinate
+ */
+function getElevatorY(index, amt) {
+	var y = getStoreyY(index, amt) + (CONF.storeyHeight - CONF.elevatorHeight)
+	return y
+}
+
+var elv = createElevator({
+	storeys: [{},{},{},{}]
+})
+
+elv.on('*', function(){
+	console.log('elv emit', arguments)
+	console.log(' - state ', elv.state)
+})
+
+console.log('constructed elv', elv)
+
+var initialProps = elv.getProps()
+
+
+function wrapStoreys (_storeys) {
+	// @todo if reducing the amount of storeys, check if elevator is not
+	// above the new max
+	var index = _storeys.length
+	var storeys = []
+	while (index--) {
+		storeys[index] = {
+			i:index,
+			x: CONF.buildingX + CONF.buildingWallThickness,
+			y: getStoreyY(index, _storeys.length),
+			width: CONF.storeyWidth,
+			height: CONF.storeyHeight,
+		}
+	}
+	return storeys
+}
+
+var ractive = new Ractive({
+	el: "#container",
+	template: "#template",
+	data: {
+		storeys: wrapStoreys(initialProps.storeys),
+		elv: { // elevator
+			height: CONF.elevatorHeight,
+			width: CONF.elevatorWidth,
+			x: CONF.elevatorX,
+			pos: initialProps.currentStorey,
+			y: getElevatorY(initialProps.currentStorey, initialProps.storeys.length)
+		}
+	},
+	setStoreys: function() {
+		ractive.set('storeys', wrapStoreys(storeys))
+	},
+	changeElevatorPosition: function(storeyNewIndex) {
+		var duration = calculateTravelDuration(ractive.currentPos(), storeyNewIndex)
+		var newY = getElevatorY(storeyNewIndex, ractive.storeysAmt())
+		// return the promise
+		return ractive.animate(
+			{'elv.y': newY, 'elv.pos':storeyNewIndex},
+			{duration:duration,easing:'easeInOut'}
+		)
+	},
+	storeysAmt: function() { return ractive.get('storeys').length },
+	currentPos: function() { return ractive.get('elv.pos') },
+});
+
+setTimeout(function(){ elv.addWaypointUp(1) }, 1000)
+
+</script>
