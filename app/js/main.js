@@ -7,9 +7,14 @@ console.log('WontRepair initializing')
 
 window.WontRepair = function(node) {
 	// initialize
-	var storeys = [new Storey, new Storey, new Storey]
+	var storeys = [new Storey(0), new Storey(1), new Storey(2)]
 	var elv = elevator.createElevator()
-	var renderer = graphics.createRenderer({domnode:node, elevator:elv})
+	var renderer = graphics.createRenderer({
+		domnode:node,
+		elevator:elv,
+		storeys: storeys
+	})
+	window.elv = elv // DEBUG
 	setTimeout(function(){ elv.addWaypointUp(1) }, 1000)
 }
 

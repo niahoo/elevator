@@ -22,6 +22,7 @@ function getStoreyY(index, amt) {
  * @return {integer}       y coordinate
  */
 function getElevatorY(index, amt) {
+	console.log('getElevatorY', index, amt)
 	var y = getStoreyY(index, amt) + (CONF.storeyHeight - CONF.elevatorHeight)
 	return y
 }
@@ -31,51 +32,61 @@ function getElevatorY(index, amt) {
 function wrapStoreys (_storeys) {
 	// @todo if reducing the amount of storeys, check if elevator is not
 	// above the new max
-	var index = _storeys.length
-	var storeys = []
-	while (index--) {
-		storeys[index] = {
-			i:index,
+	var data = _storeys.map(function(s){
+		return {
+			i: s.position,
+			_storey: s,
 			x: CONF.buildingX + CONF.buildingWallThickness,
-			y: getStoreyY(index, _storeys.length),
+			y: getStoreyY(s.position, _storeys.length),
 			width: CONF.storeyWidth,
 			height: CONF.storeyHeight,
 		}
-	}
-	return storeys
+	})
+	console.log('wrapped', data)
+	return data
 }
 
 function createRenderer(opts) {
+	console.log('createRenderer',opts)
 	var elv = opts.elevator
 	var initialProps = elv.getProps()
 	var ractive = new Ractive({
 		el: opts.domnode,
 		template: appSVGTemplate,
 		data: {
-			storeys: wrapStoreys(initialProps.storeys),
+			storeys: wrapStoreys(opts.storeys),
 			elv: { // elevator
 				height: CONF.elevatorHeight,
 				width: CONF.elevatorWidth,
 				x: CONF.elevatorX,
 				pos: initialProps.currentStorey,
-				y: getElevatorY(initialProps.currentStorey, initialProps.storeys.length)
+				y: getElevatorY(initialProps.currentStorey, opts.storeys.length)
 			}
-		},
-		setStoreys: function() {
-			ractive.set('storeys', wrapStoreys(storeys))
-		},
-		changeElevatorPosition: function(storeyNewIndex) {
-			var duration = calculateTravelDuration(ractive.currentPos(), storeyNewIndex)
-			var newY = getElevatorY(storeyNewIndex, ractive.storeysAmt())
-			// return the promise
-			return ractive.animate(
-				{'elv.y': newY, 'elv.pos':storeyNewIndex},
-				{duration:duration,easing:'easeInOut'}
-			)
 		},
 		storeysAmt: function() { return ractive.get('storeys').length },
 		currentPos: function() { return ractive.get('elv.pos') },
 	});
+
+	// -- listen to elevator changes
+
+	elv.on('*',function(){
+		// console.log('elv emit',arguments)
+		// console.log(' (state)', elv.state)
+	})
+	elv.on('transition',function(){
+		// console.log('elv emit',arguments)
+		console.log(' (state)', elv.state)
+	})
+
+	elv.on('moving', function(nextPostion, duration){
+		var newY = getElevatorY(nextPostion, opts.storeys.length)
+		return ractive.animate(
+			{'elv.y': newY, 'elv.pos':nextPostion},
+			{duration:duration,easing:'easeInOut'}
+		)
+	})
+
+	return ractive
 }
 
 exports.createRenderer = createRenderer

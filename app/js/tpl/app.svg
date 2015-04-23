@@ -21,7 +21,7 @@
 		<!-- storeys -->
 		<g id="storeys">
 			{{#storeys}}
-				<rect width="{{width}}" height="{{height}}" x="{{x}}" y="{{getStoreyY(i)}}" />
+				<rect width="{{width}}" height="{{height}}" x="{{x}}" y="{{y}}" />
 			{{/storeys}}
 		</g>
 

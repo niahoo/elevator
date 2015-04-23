@@ -6,6 +6,10 @@ function propStore (initialProps) {
 	return store
 }
 
+function after(duration, f) {
+	return setTimeout(f,duration)
+}
+
 // var direction = {UP: 1, DOWN: -1}
 var direction = {UP: 'UP', DOWN: 'DOWN'}
 var doors = {CLOSE: 1, OPEN: -1}
@@ -36,15 +40,20 @@ var defaultProps = {
 	// DOORS
 	doorsState : doors.CLOSE,
 
-	// TIMER
-	// A timer used to have cancellable setTimeouts
-	timer: undefined,
+	// TIMING
+	timer: undefined, // A timer used to have cancellable setTimeout
+	openAwaitingTime: 300, // time with the doors left open
+	closedAwaitingTime: 300, // time after doors close and starting to move
 
 	// CABIN AND ENGINES
 	hardware: {
 		cabinWeight: 200,
 		tractionForce: 2,
-		counterWeight: 200
+		counterWeight: 200,
+		doors: {
+			openingDuration:200,
+			closingDuration:200,
+		}
 	},
 
 	// STOREYS
@@ -53,8 +62,21 @@ var defaultProps = {
 
 function createElevator(_props) {
 
+	var lastWakeupID = -999
+
+	var wid = (function(){
+		var wid = 0
+		return function(){
+			wid++
+			console.log('generate new wid ' + wid)
+			return wid
+		}
+	}())
+
 	// this handles state data @todo use immutable data (deep (mori ?), Immutable stores mutable objects)
 	var props = propStore(_.merge({},defaultProps,_props))
+
+	var STOPPER = 3
 
 	var ElevatorFsm = machina.Fsm.extend({
 		namespace: 'elevator',
@@ -63,7 +85,7 @@ function createElevator(_props) {
 		states: {
 			uninitialized: {
 				_onEnter: function(){
-					this.deferUntilTransition('maybeMove')
+					this.deferUntilTransition()
 					this.transition('maybeMove')
 				}
 			},
@@ -71,9 +93,22 @@ function createElevator(_props) {
 				_onEnter: function(){
 					console.log('Elevator idle')
 				},
-				wakeup: 'maybeMove'
+				wakeup: function(id) {
+					console.log('received signal ' + id)
+					console.log(' - lastWakeupID =  ' + lastWakeupID)
+					if (id > lastWakeupID) {
+						console.log('set lastWakeupID to ' + id)
+						lastWakeupID = id
+						console.log('go maybeMove')
+						this.transition('maybeMove')
+					}
+					else {
+						console.log('ignore signal')
+						return //ignore, not the last signal
+					}
+				}
 			},
-			// maybeMove is the state jsut before the elevator moves. It must
+			// maybeMove is the state juut before the elevator moves. It must
 			// be transitionned to AFTER the doors were closed, and AFTER a
 			// little more time allowing people to push a storey button to go to
 			maybeMove: {
@@ -83,16 +118,51 @@ function createElevator(_props) {
 					var nextIndex = this.nextDestination()
 					if (nextIndex !== false) { // next can be 0
 						var diff = Math.abs(nextIndex - props.currentStorey)
+						// @todo time calculation should happen only when
+						// hardware changes (and on init)
 						var duration = diff * storeyTravelDuration(props.direction, props.hardware)
 						this.emit('moving', nextIndex, duration)
 						var self = this
-						props.timer = setTimeout(function(){
+						after(duration, function(){
 							props.currentStorey = nextIndex
 							self.emit('waypointReached', nextIndex)
-						}, duration)
+							self.deleteWaypoint(nextIndex)
+							self.transition('openingDoors')
+						})
 					} else {
 						this.transition('idle')
 					}
+				},
+			},
+			openingDoors: {
+				_onEnter: function(){
+					this.deferUntilTransition()
+					var self = this
+					after(props.hardware.doors.openingDuration, function(){
+						self.transition('doorsOpen')
+					})
+				}
+			},
+			doorsOpen: {
+				_onEnter: function(){
+					this.deferUntilTransition()
+					var self = this
+					after(props.openAwaitingTime, function(){
+						self.transition('closingDoors')
+					})
+				}
+			},
+			closingDoors: {
+				_onEnter: function(){
+					this.deferUntilTransition()
+					// animation reflects only the closing time
+					this.emit('closingDoors', props.hardware.doors.closingDuration)
+					// but we wait more
+					var totalDuration = props.hardware.doors.closingDuration + props.closedAwaitingTime
+					var self = this
+					after(totalDuration, function(){
+						self.transition('maybeMove')
+					})
 				}
 			},
 		},
@@ -111,17 +181,23 @@ function createElevator(_props) {
 		addWaypointUp: function(index) {
 			console.log('addWaypointUp',index)
 			props.waypointsUp[index] = true
-			this.handle('wakeup')
+			this.handle('wakeup', wid())
 		},
 		addWaypointDown: function(index) {
 			console.log('addWaypointDown',index)
 			props.waypointsDown[index] = true
-			this.handle('wakeup')
+			this.handle('wakeup', wid())
 		},
 		addWaypoint: function(index) {
 			console.log('addWaypoint',index)
 			props.waypoints[index] = true
-			this.handle('wakeup')
+			this.handle('wakeup', wid())
+		},
+		deleteWaypoint: function(index) {
+			console.log('deleteWaypoint', index)
+			delete props.waypoints[index]
+			delete props.waypointsUp[index]
+			delete props.waypointsDown[index]
 		},
 		nextDestination: function () {
 			console.log('nextDestination')
@@ -135,13 +211,10 @@ function createElevator(_props) {
 			var choices = {}
 			choices[direction.UP]   = _.min(_.filter(upwards, function(x){ return  x > props.currentStorey }).map(Number))
 			choices[direction.DOWN] = _.max(_.filter(downwards, function(x){ return  x < props.currentStorey }).map(Number))
-			console.log('direction choices', choices)
-			console.log('direction', props.direction)
 			// if there is no destination in the current direction, we should
 			// change direction. the _.min / _.max values return Infinity / -Infinity
 			// if the filter returns no value. So we want something finite
 			if (! _.isFinite(choices[props.direction])) this.changeDirection()
-			console.log('direction', props.direction)
 			// here, direction could have changed. Again, we check if finite and
 			// return either the next destination or false
 			return (_.isFinite(choices[props.direction])
