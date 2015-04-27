@@ -24,7 +24,8 @@
   "dependencies": {
     "lodash": "^3.7.0",
     "machina": "^1.0.0",
-    "ractive": "^0.7.2"
+    "ractive": "^0.7.2",
+    "setimmediate": "^1.0.2"
   },
   "devDependencies": {
     "dotenv": "^1.1.0",
