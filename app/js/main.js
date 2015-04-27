@@ -22,24 +22,27 @@ console.log('WontRepair installed')
 */
 
 var Proc = require('proc')
-var p = Proc.spawn(function(p){
+var p = Proc.spawn(function(){
 	console.log('initializing')
-	p.next(loop)
+	console.log('calling next into initilize')
+	this.next(loop)
 })
 
-function loop(p) {
-	p.receive('wakeup', function(){
+function loop() {
+	this.trace('entering loop')
+	console.log(' - this : ', this)
+	this.receive('wakeup', function(){
 		console.log('received wakeup')
-		p.next()
+		this.next()
 	}).receive({type:'val'}, function(message){
 		console.log('received value : ', message.val)
-		p.next()
+		this.next()
 	}).receive(150, handle_150)
 }
 
-function handle_150(val, p) {
+function handle_150(val) {
 	console.log(val + ' === 150')
-	p.next()
+	this.next()
 }
 
 p.send('wakeup')
