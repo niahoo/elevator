@@ -27,6 +27,7 @@ module.exports = {
 			{ test: /\.(html|svg)$/, exclude: /node_modules/, loader: 'ractive', query: { type: 'none' } }
 		],
 		loaders: [
+			{ test: /\.js$/, exclude: /node_modules/, loader: 'babel-loader'},
 			{ test: /\.css$/, loader: "style-loader!css-loader" }
 		]
 	},
@@ -35,10 +36,10 @@ module.exports = {
 		modulesDirectories: ['app/js','app/css','node_modules']
 	},
 	_devtool: process.env.APP_DEBUG ? '#eval-source-map' : this.undefined(),
-	devtool:'#eval-source-map',
+	// devtool:'#eval-source-map',
 	plugins: [
 		new webpack.optimize.OccurenceOrderPlugin(true),
-		new webpack.optimize.UglifyJsPlugin({minimize: true}),
+		// new webpack.optimize.UglifyJsPlugin({minimize: true}),
 		new webpack.optimize.DedupePlugin()
 	]
 }
