@@ -1,7 +1,9 @@
 
 var Proc = require('proc')
 
-var p = Proc.spawn(function (){
+var OKSTYLE = 'color:green'
+
+var p = window.p = Proc.spawn(function (){
 	console.log('initializing')
 	console.log('initializing args', arguments)
 	console.log('calling next into initilize')
@@ -11,13 +13,13 @@ var p = Proc.spawn(function (){
 function mainState() {
 	console.log('%c ~~ entering mainState', 'color:orange')
 	return this.receive('wakeup', function(){
-		console.log('received wakeup')
+		console.log('%creceived wakeup', OKSTYLE)
 		return this.next(mainState)
 	}).receive({type:'val'}, function(message){
-		console.log('received value : ', message.val)
+		console.log('%creceived value : ', OKSTYLE, message.val)
 		return this.next(mainState)
 	}).receive(150, handle_150)
-	console.log('~~ finishing mainState')
+	.after(30000, function(){ return this.next(subState)})
 }
 
 var XXX = 5
@@ -29,14 +31,14 @@ function subState() {
 		console.log('setting timeout')
 		setTimeout(function(){
 			if (XXX-- > 0)
-				next(mainState, 100)
+				next(mainState)
 		}, 300)
 	})
 }
 
 function handle_150(val) {
-	console.log(val + ' === 150')
-	return this.next(subState)
+	console.log('%c' + val + ' === 150', OKSTYLE)
+	return this.next(mainState)
 }
 p.send('wakeup')
 p.send({type:'val', val:'spa'})

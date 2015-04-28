@@ -1,57 +1,56 @@
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-
+/******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-
+/******/
 /******/ 		// Check if module is in cache
 /******/ 		if(installedModules[moduleId])
 /******/ 			return installedModules[moduleId].exports;
-
+/******/
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			exports: {},
 /******/ 			id: moduleId,
 /******/ 			loaded: false
 /******/ 		};
-
+/******/
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
+/******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.loaded = true;
-
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-
-
+/******/
+/******/
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-
+/******/
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-
+/******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-
+/******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
 /******/ })
 /************************************************************************/
-/******/ ({
-
-/***/ 0:
+/******/ ([
+/* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*var graphics = require('graphics')
 	var elevator = require('elevator')
 	var Storey = require('model/Storey')
 	var CONF = require('conf')
-
+	
 	console.log('WontRepair initializing')
-
+	
 	window.WontRepair = function(node) {
 		// initialize
 		var storeys = [new Storey(0), new Storey(1), new Storey(2)]
@@ -64,344 +63,26 @@
 		window.elv = elv // DEBUG
 		setTimeout(function(){ elv.addWaypointUp(1) }, 1000)
 	}
-
+	
 	console.log('WontRepair installed')
 	*/
-
+	
 	'use strict';
-
-	__webpack_require__(1);
-
-/***/ },
-
-/***/ 1:
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Proc = __webpack_require__(2);
-
-	var p = Proc.spawn(function () {
-		console.log('initializing');
-		console.log('initializing args', arguments);
-		console.log('calling next into initilize');
-		return this.next(mainState);
-	});
-
-	function mainState() {
-		console.log('%c ~~ entering mainState', 'color:orange');
-		return this.receive('wakeup', function () {
-			console.log('received wakeup');
-			return this.next(mainState);
-		}).receive({ type: 'val' }, function (message) {
-			console.log('received value : ', message.val);
-			return this.next(mainState);
-		}).receive(150, handle_150);
-		console.log('~~ finishing mainState');
-	}
-
-	var XXX = 5;
-
-	function subState() {
-		console.log('%c ~~ entering subState', 'color:darkgreen');
-		return this.async(function (next) {
-			console.log('setting timeout');
-			setTimeout(function () {
-				if (XXX-- > 0) next(mainState, 100);
-			}, 300);
-		});
-	}
-
-	function handle_150(val) {
-		console.log(val + ' === 150');
-		return this.next(subState);
-	}
-	p.send('wakeup');
-	p.send({ type: 'val', val: 'spa' });
-	p.send('wakeup');
-	p.send(150);
-	p.send('wakeup');
-	p.send('wakeup');
-
-	console.log('proc p', p);
+	
+	__webpack_require__(5);
 
 /***/ },
-
-/***/ 2:
+/* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate) {'use strict';
-
-	var extend = __webpack_require__(17);
-	__webpack_require__(45);
-	var _ = __webpack_require__(52);
-	var spawn = setImmediate;
-	var Promise = __webpack_require__(16).Promise;
-
-	function noop() {}
-
-	function strictIsEqualTo(a) {
-		return function (b) {
-			return a === b;
-		};
-	}
-
-	var gid = function gid() {
-		var gid = 0;
-		return function () {
-			return ++gid;
-		};
-	};
-
-	var DEBUG_INCREMENT = 0;
-
-	var ttrace = function ttrace() {
-		var args = ['%c#' + DEBUG_INCREMENT++].concat('color:#aaa').concat(Array.prototype.slice.call(arguments))
-		// console.log.apply(console, args)
-		;
-	};
-
-	function logArgs() {
-		console.log('logArgs', arguments);
-	}
-
-	var bif = (function () {
-		var t = 0;
-		return function () {
-			var d = new Date(),
-			    t2 = d.getTime();
-			console.log('%cprev call was ' + (t2 - t), 'color:lightblue');
-			t = t2;
-		};
-	})();
-
-	// How it works
-	//
-	// The user provides an `initialize` function. This function is wrapped into a
-	// `Next` object and passed to `maybeLoop` which receives wrappers. `maybeLoop`
-	// checks that it is actually a wrapper and calls `.run()` on the wrapper,
-	// passing proc context. Wrappers must return promises. Then, `maybeLoop` send
-	// the response from `wrapper.run()` to `proc.loop()` which receives promises.
-	// `proc.loop()` adds a `.then()` to the promise, accepting a new promises (such
-	// as a new `Next` resulting from the user calling `this.next`)
-
-	function Proc(init) {
-		var opts = typeof init === 'function' ? { initialize: init } : init;
-		extend(this, opts);
-		this.__mailbox = new Mailbox();
-		// initialization is synchronous
-		var self = this;
-		spawn(function () {
-			var handle = self.next(self.initialize);
-			self.maybeLoop(handle);
-		});
-	}
-
-	Proc.prototype.loop = function (promise) {
-		// bif()
-		// ttrace('loop', promise)
-		var self = this;
-		promise.then(function (val) {
-			self.maybeLoop(val);
-		})['catch'](function (err) {
-			console.error(err);
-			throw err;
-		});
-	};
-
-	Proc.prototype.maybeLoop = function (wrapper) {
-		// ttrace('maybeloop', wrapper)
-		if (wrapper instanceof Next || wrapper instanceof Receive) {
-			return this.loop(wrapper.run(this));
-		} else {
-			console.error(wrapper, 'is not a valid wrapper');
-		}
-	};
-
-	Proc.prototype.next = function (fun, time) {
-		ttrace('next time', time);
-		return new Next(fun, time);
-	};
-
-	Proc.prototype.receive = function (pattern, fun) {
-		return new Receive(this.__mailbox).receive(pattern, fun);
-	};
-
-	// this function allows the user to perform async work and then call the resolve
-	// function passing the new looping function. Then we use the .next function to
-	// turn the new loop fun into a promise (and to force spawn)
-	Proc.prototype.async = function (fun) {
-		var bound = fun.bind(this);
-		var self = this;
-		return new Promise(function (resolve, reject) {
-			var next = function next(f, time) {
-				resolve([f, time]);
-			};
-			bound(next);
-		}).then(function (data) {
-			return self.next(data[0], data[1]);
-		});
-	};
-
-	Proc.prototype.onError = function (err, ret) {
-		console.log('onError ret', ret);
-		console.log('onError err', err);
-		throw err;
-	};
-
-	// -- Promise wrappers --------------------------------------------------------
-
-	function Next(fun, time) {
-		this.fun = fun;
-		this.time = time;
-	}
-
-	Next.prototype.run = function (context) {
-		var bound = this.fun.bind(context),
-		    self = this;
-		return new Promise(function (resolve, reject) {
-			var work = function work() {
-				resolve(bound());
-			};
-			// -- Asynchronicity is forced here since .next receives the optional
-			// time parameter
-			if (self.time > 0) setTimeout(work, self.time);else spawn(work);
-		});
-	};
-
-	function Receive(mailbox, time) {
-		this.mailbox = mailbox;
-		this.clauses = [];
-		this.hasTimeoutClause = false;
-		var self = this;
-		this.promise = new Promise(function (resolve) {
-			self.resolver = function (context) {
-				resolve(context);
-			};
-		});
-		// the chain handles the last added .then() to the chain, starting with the
-		// promise itself
-		this.chain = this.promise;
-	}
-
-	Receive.prototype.initialMatchContext = function () {
-		return {
-			matched: false,
-			callback: undefined,
-			mailbox: this.mailbox,
-			failedClauses: []
-		};
-	};
-
-	Receive.prototype.receive = function (pattern, callback) {
-		this.chain = this.chain.then(function (acc) {
-			// if previous clause has found a message, just pass the context through
-			if (acc.matched) return acc;
-
-			var message = acc.mailbox.match(pattern);
-			if (message) {
-				ttrace('receive clause succeeded');
-				return extend(acc, { matched: message, callback: callback });
-			} else {
-				ttrace('receive clause failed');
-				acc.failedClauses.push([pattern, callback]);
-				return acc;
-			}
-		});
-		return this;
-	};
-
-	Receive.prototype.run = function () {
-		this.resolver(this.initialMatchContext());
-		//@todo if !this.hasTimeoutClause add an infinity clause
-		return this.chain.then(function (acc) {
-			console.log('match context', acc);
-			if (acc.matched) {
-				// calling the user callback into a Next
-				return new Next(function () {
-					// 'this' here is the proc context as passed into
-					// Next.prototype.run(), so we bind the callback.
-					// We also pass the message found in the mailbox
-					return acc.callback.bind(this)(acc.matched);
-				});
-			}
-		});
-	};
-
-	Receive.prototype.resolver = function () {};
-
-	// -- Mailbox -----------------------------------------------------------------
-
-	function Mailbox() {
-		this.stack = [];
-	}
-
-	Mailbox.prototype.push = function (message) {
-		this.stack.push(message);
-	};
-
-	Mailbox.prototype.match = function (pattern) {
-		ttrace('matching', pattern);
-		var predicate;
-		if (typeof pattern === 'object') {
-			predicate = _.matches(pattern);
-		} else {
-			predicate = strictIsEqualTo(pattern);
-		}
-		var index = _.findIndex(this.stack, predicate);
-		if (index !== -1) {
-			// message found, drop it from the stack
-			var message = this.stack[index];
-			this.stack.splice(index, 1);
-			ttrace('found', message);
-			return message;
-		} else {
-			return false;
-		}
-	};
-
-	// -- Client -----------------------------------------------------------------
-
-	function Client(mailbox) {
-		this.mailbox = mailbox;
-	}
-
-	Client.prototype.send = function (message) {
-		var self = this;
-		// @todo _.cloneDeep overkill ?
-		ttrace('send message', message);
-		spawn(function () {
-			self.mailbox.push(_.cloneDeep(message));
-		});
-	};
-
-	// -- API ---------------------------------------------------------------------
-
-	Proc.spawn = function (init) {
-		var proc = new Proc(init);
-		var client = new Client(proc.__mailbox);
-		return client;
-	};
-
-	module.exports = Proc;
-
-	/* hi ! */
-	/* overriden in promise in construction */
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6).setImmediate))
-
-/***/ },
-
-/***/ 6:
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(12).nextTick;
+	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(2).nextTick;
 	var apply = Function.prototype.apply;
 	var slice = Array.prototype.slice;
 	var immediateIds = {};
 	var nextImmediateId = 0;
-
+	
 	// DOM APIs, for completeness
-
+	
 	exports.setTimeout = function() {
 	  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
 	};
@@ -410,7 +91,7 @@
 	};
 	exports.clearTimeout =
 	exports.clearInterval = function(timeout) { timeout.close(); };
-
+	
 	function Timeout(id, clearFn) {
 	  this._id = id;
 	  this._clearFn = clearFn;
@@ -419,21 +100,21 @@
 	Timeout.prototype.close = function() {
 	  this._clearFn.call(window, this._id);
 	};
-
+	
 	// Does not start the time, just sets up the members needed.
 	exports.enroll = function(item, msecs) {
 	  clearTimeout(item._idleTimeoutId);
 	  item._idleTimeout = msecs;
 	};
-
+	
 	exports.unenroll = function(item) {
 	  clearTimeout(item._idleTimeoutId);
 	  item._idleTimeout = -1;
 	};
-
+	
 	exports._unrefActive = exports.active = function(item) {
 	  clearTimeout(item._idleTimeoutId);
-
+	
 	  var msecs = item._idleTimeout;
 	  if (msecs >= 0) {
 	    item._idleTimeoutId = setTimeout(function onTimeout() {
@@ -442,14 +123,14 @@
 	    }, msecs);
 	  }
 	};
-
+	
 	// That's not how node.js implements it but the exposed api is the same.
 	exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
 	  var id = nextImmediateId++;
 	  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
-
+	
 	  immediateIds[id] = true;
-
+	
 	  nextTick(function onNextTick() {
 	    if (immediateIds[id]) {
 	      // fn.call() is faster so we optimize for the common use-case
@@ -463,26 +144,25 @@
 	      exports.clearImmediate(id);
 	    }
 	  });
-
+	
 	  return id;
 	};
-
+	
 	exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
 	  delete immediateIds[id];
 	};
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6).setImmediate, __webpack_require__(6).clearImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).setImmediate, __webpack_require__(1).clearImmediate))
 
 /***/ },
-
-/***/ 12:
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for using process in browser
-
+	
 	var process = module.exports = {};
 	var queue = [];
 	var draining = false;
-
+	
 	function drainQueue() {
 	    if (draining) {
 	        return;
@@ -507,16 +187,16 @@
 	        setTimeout(drainQueue, 0);
 	    }
 	};
-
+	
 	process.title = 'browser';
 	process.browser = true;
 	process.env = {};
 	process.argv = [];
 	process.version = ''; // empty string to avoid regexp issues
 	process.versions = {};
-
+	
 	function noop() {}
-
+	
 	process.on = noop;
 	process.addListener = noop;
 	process.once = noop;
@@ -524,11 +204,11 @@
 	process.removeListener = noop;
 	process.removeAllListeners = noop;
 	process.emit = noop;
-
+	
 	process.binding = function (name) {
 	    throw new Error('process.binding is not supported');
 	};
-
+	
 	// TODO(shtylman)
 	process.cwd = function () { return '/' };
 	process.chdir = function (dir) {
@@ -538,8 +218,428 @@
 
 
 /***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
 
-/***/ 16:
+	module.exports = function(module) {
+		if(!module.webpackPolyfill) {
+			module.deprecate = function() {};
+			module.paths = [];
+			// module.parent = undefined by default
+			module.children = [];
+			module.webpackPolyfill = 1;
+		}
+		return module;
+	}
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {'use strict';
+	
+	var extend = __webpack_require__(7);
+	__webpack_require__(9);
+	var _ = __webpack_require__(8);
+	var spawn = setImmediate;
+	var Promise = __webpack_require__(6).Promise;
+	
+	function noop() {}
+	
+	function strictIsEqualTo(a) {
+		return function (b) {
+			return a === b;
+		};
+	}
+	
+	var gid = function gid() {
+		var gid = 0;
+		return function () {
+			return ++gid;
+		};
+	};
+	
+	var DEBUG_INCREMENT = 0;
+	
+	var ttrace = function ttrace() {
+		var args = ['%c#' + DEBUG_INCREMENT++].concat('color:#aaa').concat(Array.prototype.slice.call(arguments));
+		console.log.apply(console, args);
+	};
+	
+	function logArgs() {
+		console.log('logArgs', arguments);
+	}
+	
+	var bif = (function () {
+		var t = 0;
+		return function () {
+			var d = new Date(),
+			    t2 = d.getTime();
+			console.log('%cprev call was ' + (t2 - t), 'color:lightblue');
+			t = t2;
+		};
+	})();
+	
+	// How it works
+	//
+	// The user provides an `initialize` function. This function is wrapped into a
+	// `Next` object and passed to `maybeLoop` which receives wrappers. `maybeLoop`
+	// checks that it is actually a wrapper and calls `.run()` on the wrapper,
+	// passing proc context. Wrappers must return promises. Then, `maybeLoop` send
+	// the response from `wrapper.run()` to `proc.loop()` which receives promises.
+	// `proc.loop()` adds a `.then()` to the promise, accepting a new promises (such
+	// as a new `Next` resulting from the user calling `this.next`)
+	
+	function Proc(init) {
+		var opts = typeof init === 'function' ? { initialize: init } : init;
+		extend(this, opts);
+		this.__mailbox = new Mailbox();
+		this.client = new Client(this.__mailbox);
+		// initialization is synchronous
+		var self = this;
+		spawn(function () {
+			var handle = self.next(self.initialize);
+			self.maybeLoop(handle);
+		});
+	}
+	
+	Proc.prototype.loop = function (promise) {
+		// bif()
+		// ttrace('loop', promise)
+		var self = this;
+		promise.then(function (val) {
+			self.maybeLoop(val);
+		})['catch'](function (err) {
+			console.error(err.stack);
+			throw err;
+		});
+	};
+	
+	Proc.prototype.maybeLoop = function (wrapper) {
+		// ttrace('maybeloop', wrapper)
+		if (wrapper instanceof Next || wrapper instanceof Receive) {
+			return this.loop(wrapper.run(this));
+		} else {
+			console.error(wrapper, 'is not a valid wrapper');
+		}
+	};
+	
+	Proc.prototype.next = function (fun, time) {
+		ttrace('next time', time);
+		return new Next(fun, time);
+	};
+	
+	Proc.prototype.receive = function (pattern, fun) {
+		return new Receive(this.__mailbox).receive(pattern, fun);
+	};
+	
+	// this function allows the user to perform async work and then call the resolve
+	// function passing the new looping function. Then we use the .next function to
+	// turn the new loop fun into a promise (and to force spawn)
+	Proc.prototype.async = function (fun) {
+		var bound = fun.bind(this);
+		var self = this;
+		return new Promise(function (resolve, reject) {
+			var next = function next(f, time) {
+				resolve([f, time]);
+			};
+			bound(next);
+		}).then(function (data) {
+			return self.next(data[0], data[1]);
+		});
+	};
+	
+	Proc.prototype.onError = function (err, ret) {
+		console.log('onError ret', ret);
+		console.log('onError err', err);
+		throw err;
+	};
+	
+	// -- Promise wrappers --------------------------------------------------------
+	
+	function Next(fun, time) {
+		this.fun = fun;
+		this.time = time;
+	}
+	
+	Next.prototype.run = function (context) {
+		var bound = this.fun.bind(context),
+		    self = this;
+		return new Promise(function (resolve, reject) {
+			var work = function work() {
+				resolve(bound());
+			};
+			// -- Asynchronicity is forced here since .next receives the optional
+			// time parameter
+			if (self.time > 0) setTimeout(work, self.time);else spawn(work);
+		});
+	};
+	
+	function Receive(mailbox, time) {
+		this.mailbox = mailbox;
+		this.clauses = [];
+		this.afterClause = undefined;
+		var self = this;
+	}
+	
+	Receive.prototype.receive = function (pattern, callback) {
+		var predicate = this.getPredicateFunction(pattern);
+		this.clauses.push([predicate, callback]);
+		return this;
+	};
+	
+	Receive.prototype.OFF_getPredicateFunction = function (pattern) {
+		var pred = typeof pattern === 'object' ? _.matches(pattern) : strictIsEqualTo(pattern);
+		return function (t) {
+			ttrace(pattern, ' not match ', t);
+			return pred(t);
+		};
+	};
+	
+	Receive.prototype.getPredicateFunction = function (pattern) {
+		return typeof pattern === 'object' ? _.matches(pattern) : strictIsEqualTo(pattern);
+	};
+	//	this.chain = this.chain.then(function(acc){
+	//		// if previous clause has found a message, just pass the context through
+	//		if (acc.matched) return acc
+	
+	//		// if no message is found, udefined is returned
+	//		var message = acc.mailbox.match(pattern)
+	//		if (message !== void 0) {
+	//			ttrace('receive clause succeeded')
+	//			return extend(acc,{matched:true, message:message, callback:callback})
+	//		} else {
+	//			ttrace('receive clause failed')
+	//			acc.failedClauses.push([pattern,callback])
+	//			return acc
+	//		}
+	//	})
+	//	return this
+	// }
+	
+	Receive.prototype.after = function (timeout, callback) {
+		this.afterClause = [timeout, callback];
+		return this;
+	};
+	
+	Receive.prototype.run = function (callbackContext) {
+		ttrace('Receive run');
+		if (!this.afterClause) {
+			// if no .after clause has been set, we set one with Infinity as a
+			// timeout
+			ttrace('auto setting infinity clause');
+			this.after(Infinity);
+		}
+		// we send all the clauses to the mailbox which knows how to handle them (we
+		// should define an interface because this violates encapsulation ?)
+	
+		// The mailbox returns a promise resulting in a match context with the
+		// message and the associated callback
+		return this.mailbox.withMatch(this.clauses, this.afterClause[0], this.afterClause[1]).then(function (matchContext) {
+			return new Next(function () {
+				ttrace('match context', matchContext);
+				// we call the user callback, bound to the proc context, passing
+				// the message. The callback must return a wrapper (this.next(),
+				// this.receive(), ...)
+				// if a timeout occured, the message is undefined
+				return matchContext.callback.bind(callbackContext)(matchContext.message);
+			});
+		});
+	};
+	
+	// -- Mailbox -----------------------------------------------------------------
+	
+	function Mailbox() {
+		this.stack = [];
+		this.onMessage = false;
+	}
+	
+	Mailbox.prototype.push = function (message) {
+	
+		ttrace('mailbox push called', message);
+		// we check if a message handler is set. If yes, we only stack the message
+		// if the handler returns falsy (message NOT consumed)
+		if (!this.onMessage || !this.onMessage(message)) {
+			this.stack.push(message);
+		}
+	};
+	
+	// accepts a clauses array such as defined per Receiv & returns a match context
+	// or undefined
+	Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
+		ttrace('withMatch mailbox stack', this.stack);
+		var slen = this.stack.length,
+		    clen = clauses.length,
+		    message,
+		    clause,
+		    predicate,
+		    callback,
+		    i,
+		    j,
+		    self = this;
+		for (i = 0; i < slen; i++) {
+			message = this.stack[i];
+			ttrace('test message', message);
+			for (j = 0; j < clen; j++) {
+				clause = clauses[j];
+				predicate = clause[0];
+				callback = clause[1];
+				if (predicate(message)) {
+					// we found a matching message. We delete it
+					this.stack.splice(i, 1);
+					return Promise.resolve({
+						matched: true,
+						message: message,
+						callback: callback
+					});
+				}
+			}
+		}
+	
+		// we did not find a matching message. we will set a timeout and resolve it
+		// as soon as we receive a matching message
+	
+		// onMessage should not be bound since the Receive promise wrapper should
+		// not be resolved until the following code is executed (or if the previous
+		// search matcses, onMessage won't be bound)
+		if (this.onMessage) {
+			console.error('onMessage already bound'); //@todo remove this line
+			throw new Error('mailbox onMessage already bound');
+		}
+	
+		var timer;
+	
+		return new Promise(function (resolve, reject) {
+			self.onMessage = function (message) {
+				ttrace('mailbox onMessage called');
+				// when we get a message, we check for the clauses to match
+				for (j = 0; j < clen; j++) {
+					clause = clauses[j];
+					predicate = clause[0];
+					callback = clause[1];
+					if (predicate(message)) {
+						self.onMessage = false;
+						// a clearTimeout should be useless as the promise can only
+						// be resolved once ; but doing so we dicard any debug trace
+						// in the timeout callback. (@todo in production, no debug
+						// => no clearTimeout)
+						clearTimeout(timer);
+						resolve({
+							matched: true,
+							message: message,
+							callback: callback
+						});
+						// we return true, which means that the message will not be
+						// pushed on the stack (as we use it now)
+						return true;
+					}
+				}
+				return false;
+			};
+			// set the onmessage listener. If the timeout is 0, a matching message has already be
+			if (_.isFinite(timeout)) {
+				// if the timeout occurs, we resolve the Promise with the associated
+				// callback and an undefined message
+				ttrace('waiting for ' + timeout);
+				var resolveTimeout = function resolveTimeout() {
+					self.onMessage = false;
+					resolve({
+						matched: false,
+						message: undefined,
+						callback: timeoutCallback
+					});
+				};
+				// if timeout is 0 we resolve synchronously
+				if (timeout > 0) timer = setTimeout(resolveTimeout, timeout);else /* timeout === 0 */resolveTimeout();
+			}
+		});
+	};
+	
+	// -- Client -----------------------------------------------------------------
+	
+	function Client(mailbox) {
+		this.mailbox = mailbox;
+	}
+	
+	Client.prototype.send = function (message) {
+		var self = this;
+		// @todo _.cloneDeep overkill ?
+		ttrace('send message', message);
+		spawn(function () {
+			self.mailbox.push(_.cloneDeep(message));
+		});
+	};
+	
+	// -- API ---------------------------------------------------------------------
+	
+	Proc.spawn = function (init) {
+		var proc = new Proc(init);
+		return proc.client;
+	};
+	
+	module.exports = Proc;
+	
+	/* hi ! */
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).setImmediate))
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var Proc = __webpack_require__(4);
+	
+	var OKSTYLE = 'color:green';
+	
+	var p = window.p = Proc.spawn(function () {
+		console.log('initializing');
+		console.log('initializing args', arguments);
+		console.log('calling next into initilize');
+		return this.next(mainState);
+	});
+	
+	function mainState() {
+		console.log('%c ~~ entering mainState', 'color:orange');
+		return this.receive('wakeup', function () {
+			console.log('%creceived wakeup', OKSTYLE);
+			return this.next(mainState);
+		}).receive({ type: 'val' }, function (message) {
+			console.log('%creceived value : ', OKSTYLE, message.val);
+			return this.next(mainState);
+		}).receive(150, handle_150).after(30000, function () {
+			return this.next(subState);
+		});
+	}
+	
+	var XXX = 5;
+	
+	function subState() {
+		console.log('%c ~~ entering subState', 'color:darkgreen');
+		return this.async(function (next) {
+			console.log('setting timeout');
+			setTimeout(function () {
+				if (XXX-- > 0) next(mainState);
+			}, 300);
+		});
+	}
+	
+	function handle_150(val) {
+		console.log('%c' + val + ' === 150', OKSTYLE);
+		return this.next(mainState);
+	}
+	p.send('wakeup');
+	p.send({ type: 'val', val: 'spa' });
+	p.send('wakeup');
+	p.send(150);
+	p.send('wakeup');
+	p.send('wakeup');
+	
+	console.log('proc p', p);
+
+/***/ },
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(process, setImmediate, global, module) {/*!
@@ -549,21 +649,21 @@
 	 *            See https://raw.githubusercontent.com/jakearchibald/es6-promise/master/LICENSE
 	 * @version   2.1.1
 	 */
-
+	
 	(function() {
 	    "use strict";
 	    function lib$es6$promise$utils$$objectOrFunction(x) {
 	      return typeof x === 'function' || (typeof x === 'object' && x !== null);
 	    }
-
+	
 	    function lib$es6$promise$utils$$isFunction(x) {
 	      return typeof x === 'function';
 	    }
-
+	
 	    function lib$es6$promise$utils$$isMaybeThenable(x) {
 	      return typeof x === 'object' && x !== null;
 	    }
-
+	
 	    var lib$es6$promise$utils$$_isArray;
 	    if (!Array.isArray) {
 	      lib$es6$promise$utils$$_isArray = function (x) {
@@ -572,7 +672,7 @@
 	    } else {
 	      lib$es6$promise$utils$$_isArray = Array.isArray;
 	    }
-
+	
 	    var lib$es6$promise$utils$$isArray = lib$es6$promise$utils$$_isArray;
 	    var lib$es6$promise$asap$$len = 0;
 	    var lib$es6$promise$asap$$toString = {}.toString;
@@ -588,19 +688,19 @@
 	        lib$es6$promise$asap$$scheduleFlush();
 	      }
 	    }
-
+	
 	    var lib$es6$promise$asap$$default = lib$es6$promise$asap$$asap;
-
+	
 	    var lib$es6$promise$asap$$browserWindow = (typeof window !== 'undefined') ? window : undefined;
 	    var lib$es6$promise$asap$$browserGlobal = lib$es6$promise$asap$$browserWindow || {};
 	    var lib$es6$promise$asap$$BrowserMutationObserver = lib$es6$promise$asap$$browserGlobal.MutationObserver || lib$es6$promise$asap$$browserGlobal.WebKitMutationObserver;
 	    var lib$es6$promise$asap$$isNode = typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
-
+	
 	    // test for web worker but not in IE10
 	    var lib$es6$promise$asap$$isWorker = typeof Uint8ClampedArray !== 'undefined' &&
 	      typeof importScripts !== 'undefined' &&
 	      typeof MessageChannel !== 'undefined';
-
+	
 	    // node
 	    function lib$es6$promise$asap$$useNextTick() {
 	      var nextTick = process.nextTick;
@@ -614,25 +714,25 @@
 	        nextTick(lib$es6$promise$asap$$flush);
 	      };
 	    }
-
+	
 	    // vertx
 	    function lib$es6$promise$asap$$useVertxTimer() {
 	      return function() {
 	        lib$es6$promise$asap$$vertxNext(lib$es6$promise$asap$$flush);
 	      };
 	    }
-
+	
 	    function lib$es6$promise$asap$$useMutationObserver() {
 	      var iterations = 0;
 	      var observer = new lib$es6$promise$asap$$BrowserMutationObserver(lib$es6$promise$asap$$flush);
 	      var node = document.createTextNode('');
 	      observer.observe(node, { characterData: true });
-
+	
 	      return function() {
 	        node.data = (iterations = ++iterations % 2);
 	      };
 	    }
-
+	
 	    // web worker
 	    function lib$es6$promise$asap$$useMessageChannel() {
 	      var channel = new MessageChannel();
@@ -641,39 +741,39 @@
 	        channel.port2.postMessage(0);
 	      };
 	    }
-
+	
 	    function lib$es6$promise$asap$$useSetTimeout() {
 	      return function() {
 	        setTimeout(lib$es6$promise$asap$$flush, 1);
 	      };
 	    }
-
+	
 	    var lib$es6$promise$asap$$queue = new Array(1000);
 	    function lib$es6$promise$asap$$flush() {
 	      for (var i = 0; i < lib$es6$promise$asap$$len; i+=2) {
 	        var callback = lib$es6$promise$asap$$queue[i];
 	        var arg = lib$es6$promise$asap$$queue[i+1];
-
+	
 	        callback(arg);
-
+	
 	        lib$es6$promise$asap$$queue[i] = undefined;
 	        lib$es6$promise$asap$$queue[i+1] = undefined;
 	      }
-
+	
 	      lib$es6$promise$asap$$len = 0;
 	    }
-
+	
 	    function lib$es6$promise$asap$$attemptVertex() {
 	      try {
 	        var r = require;
-	        var vertx = __webpack_require__(48);
+	        var vertx = __webpack_require__(11);
 	        lib$es6$promise$asap$$vertxNext = vertx.runOnLoop || vertx.runOnContext;
 	        return lib$es6$promise$asap$$useVertxTimer();
 	      } catch(e) {
 	        return lib$es6$promise$asap$$useSetTimeout();
 	      }
 	    }
-
+	
 	    var lib$es6$promise$asap$$scheduleFlush;
 	    // Decide what async method to use to triggering processing of queued callbacks:
 	    if (lib$es6$promise$asap$$isNode) {
@@ -687,23 +787,23 @@
 	    } else {
 	      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useSetTimeout();
 	    }
-
+	
 	    function lib$es6$promise$$internal$$noop() {}
-
+	
 	    var lib$es6$promise$$internal$$PENDING   = void 0;
 	    var lib$es6$promise$$internal$$FULFILLED = 1;
 	    var lib$es6$promise$$internal$$REJECTED  = 2;
-
+	
 	    var lib$es6$promise$$internal$$GET_THEN_ERROR = new lib$es6$promise$$internal$$ErrorObject();
-
+	
 	    function lib$es6$promise$$internal$$selfFullfillment() {
 	      return new TypeError("You cannot resolve a promise with itself");
 	    }
-
+	
 	    function lib$es6$promise$$internal$$cannotReturnOwn() {
 	      return new TypeError('A promises callback cannot return that same promise.');
 	    }
-
+	
 	    function lib$es6$promise$$internal$$getThen(promise) {
 	      try {
 	        return promise.then;
@@ -712,7 +812,7 @@
 	        return lib$es6$promise$$internal$$GET_THEN_ERROR;
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$tryThen(then, value, fulfillmentHandler, rejectionHandler) {
 	      try {
 	        then.call(value, fulfillmentHandler, rejectionHandler);
@@ -720,7 +820,7 @@
 	        return e;
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$handleForeignThenable(promise, thenable, then) {
 	       lib$es6$promise$asap$$default(function(promise) {
 	        var sealed = false;
@@ -735,17 +835,17 @@
 	        }, function(reason) {
 	          if (sealed) { return; }
 	          sealed = true;
-
+	
 	          lib$es6$promise$$internal$$reject(promise, reason);
 	        }, 'Settle: ' + (promise._label || ' unknown promise'));
-
+	
 	        if (!sealed && error) {
 	          sealed = true;
 	          lib$es6$promise$$internal$$reject(promise, error);
 	        }
 	      }, promise);
 	    }
-
+	
 	    function lib$es6$promise$$internal$$handleOwnThenable(promise, thenable) {
 	      if (thenable._state === lib$es6$promise$$internal$$FULFILLED) {
 	        lib$es6$promise$$internal$$fulfill(promise, thenable._result);
@@ -759,13 +859,13 @@
 	        });
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$handleMaybeThenable(promise, maybeThenable) {
 	      if (maybeThenable.constructor === promise.constructor) {
 	        lib$es6$promise$$internal$$handleOwnThenable(promise, maybeThenable);
 	      } else {
 	        var then = lib$es6$promise$$internal$$getThen(maybeThenable);
-
+	
 	        if (then === lib$es6$promise$$internal$$GET_THEN_ERROR) {
 	          lib$es6$promise$$internal$$reject(promise, lib$es6$promise$$internal$$GET_THEN_ERROR.error);
 	        } else if (then === undefined) {
@@ -777,7 +877,7 @@
 	        }
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$resolve(promise, value) {
 	      if (promise === value) {
 	        lib$es6$promise$$internal$$reject(promise, lib$es6$promise$$internal$$selfFullfillment());
@@ -787,77 +887,77 @@
 	        lib$es6$promise$$internal$$fulfill(promise, value);
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$publishRejection(promise) {
 	      if (promise._onerror) {
 	        promise._onerror(promise._result);
 	      }
-
+	
 	      lib$es6$promise$$internal$$publish(promise);
 	    }
-
+	
 	    function lib$es6$promise$$internal$$fulfill(promise, value) {
 	      if (promise._state !== lib$es6$promise$$internal$$PENDING) { return; }
-
+	
 	      promise._result = value;
 	      promise._state = lib$es6$promise$$internal$$FULFILLED;
-
+	
 	      if (promise._subscribers.length !== 0) {
 	        lib$es6$promise$asap$$default(lib$es6$promise$$internal$$publish, promise);
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$reject(promise, reason) {
 	      if (promise._state !== lib$es6$promise$$internal$$PENDING) { return; }
 	      promise._state = lib$es6$promise$$internal$$REJECTED;
 	      promise._result = reason;
-
+	
 	      lib$es6$promise$asap$$default(lib$es6$promise$$internal$$publishRejection, promise);
 	    }
-
+	
 	    function lib$es6$promise$$internal$$subscribe(parent, child, onFulfillment, onRejection) {
 	      var subscribers = parent._subscribers;
 	      var length = subscribers.length;
-
+	
 	      parent._onerror = null;
-
+	
 	      subscribers[length] = child;
 	      subscribers[length + lib$es6$promise$$internal$$FULFILLED] = onFulfillment;
 	      subscribers[length + lib$es6$promise$$internal$$REJECTED]  = onRejection;
-
+	
 	      if (length === 0 && parent._state) {
 	        lib$es6$promise$asap$$default(lib$es6$promise$$internal$$publish, parent);
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$publish(promise) {
 	      var subscribers = promise._subscribers;
 	      var settled = promise._state;
-
+	
 	      if (subscribers.length === 0) { return; }
-
+	
 	      var child, callback, detail = promise._result;
-
+	
 	      for (var i = 0; i < subscribers.length; i += 3) {
 	        child = subscribers[i];
 	        callback = subscribers[i + settled];
-
+	
 	        if (child) {
 	          lib$es6$promise$$internal$$invokeCallback(settled, child, callback, detail);
 	        } else {
 	          callback(detail);
 	        }
 	      }
-
+	
 	      promise._subscribers.length = 0;
 	    }
-
+	
 	    function lib$es6$promise$$internal$$ErrorObject() {
 	      this.error = null;
 	    }
-
+	
 	    var lib$es6$promise$$internal$$TRY_CATCH_ERROR = new lib$es6$promise$$internal$$ErrorObject();
-
+	
 	    function lib$es6$promise$$internal$$tryCatch(callback, detail) {
 	      try {
 	        return callback(detail);
@@ -866,14 +966,14 @@
 	        return lib$es6$promise$$internal$$TRY_CATCH_ERROR;
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$invokeCallback(settled, promise, callback, detail) {
 	      var hasCallback = lib$es6$promise$utils$$isFunction(callback),
 	          value, error, succeeded, failed;
-
+	
 	      if (hasCallback) {
 	        value = lib$es6$promise$$internal$$tryCatch(callback, detail);
-
+	
 	        if (value === lib$es6$promise$$internal$$TRY_CATCH_ERROR) {
 	          failed = true;
 	          error = value.error;
@@ -881,17 +981,17 @@
 	        } else {
 	          succeeded = true;
 	        }
-
+	
 	        if (promise === value) {
 	          lib$es6$promise$$internal$$reject(promise, lib$es6$promise$$internal$$cannotReturnOwn());
 	          return;
 	        }
-
+	
 	      } else {
 	        value = detail;
 	        succeeded = true;
 	      }
-
+	
 	      if (promise._state !== lib$es6$promise$$internal$$PENDING) {
 	        // noop
 	      } else if (hasCallback && succeeded) {
@@ -904,7 +1004,7 @@
 	        lib$es6$promise$$internal$$reject(promise, value);
 	      }
 	    }
-
+	
 	    function lib$es6$promise$$internal$$initializePromise(promise, resolver) {
 	      try {
 	        resolver(function resolvePromise(value){
@@ -916,20 +1016,20 @@
 	        lib$es6$promise$$internal$$reject(promise, e);
 	      }
 	    }
-
+	
 	    function lib$es6$promise$enumerator$$Enumerator(Constructor, input) {
 	      var enumerator = this;
-
+	
 	      enumerator._instanceConstructor = Constructor;
 	      enumerator.promise = new Constructor(lib$es6$promise$$internal$$noop);
-
+	
 	      if (enumerator._validateInput(input)) {
 	        enumerator._input     = input;
 	        enumerator.length     = input.length;
 	        enumerator._remaining = input.length;
-
+	
 	        enumerator._init();
-
+	
 	        if (enumerator.length === 0) {
 	          lib$es6$promise$$internal$$fulfill(enumerator.promise, enumerator._result);
 	        } else {
@@ -943,37 +1043,37 @@
 	        lib$es6$promise$$internal$$reject(enumerator.promise, enumerator._validationError());
 	      }
 	    }
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._validateInput = function(input) {
 	      return lib$es6$promise$utils$$isArray(input);
 	    };
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._validationError = function() {
 	      return new Error('Array Methods must be provided an Array');
 	    };
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._init = function() {
 	      this._result = new Array(this.length);
 	    };
-
+	
 	    var lib$es6$promise$enumerator$$default = lib$es6$promise$enumerator$$Enumerator;
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._enumerate = function() {
 	      var enumerator = this;
-
+	
 	      var length  = enumerator.length;
 	      var promise = enumerator.promise;
 	      var input   = enumerator._input;
-
+	
 	      for (var i = 0; promise._state === lib$es6$promise$$internal$$PENDING && i < length; i++) {
 	        enumerator._eachEntry(input[i], i);
 	      }
 	    };
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._eachEntry = function(entry, i) {
 	      var enumerator = this;
 	      var c = enumerator._instanceConstructor;
-
+	
 	      if (lib$es6$promise$utils$$isMaybeThenable(entry)) {
 	        if (entry.constructor === c && entry._state !== lib$es6$promise$$internal$$PENDING) {
 	          entry._onerror = null;
@@ -986,29 +1086,29 @@
 	        enumerator._result[i] = entry;
 	      }
 	    };
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._settledAt = function(state, i, value) {
 	      var enumerator = this;
 	      var promise = enumerator.promise;
-
+	
 	      if (promise._state === lib$es6$promise$$internal$$PENDING) {
 	        enumerator._remaining--;
-
+	
 	        if (state === lib$es6$promise$$internal$$REJECTED) {
 	          lib$es6$promise$$internal$$reject(promise, value);
 	        } else {
 	          enumerator._result[i] = value;
 	        }
 	      }
-
+	
 	      if (enumerator._remaining === 0) {
 	        lib$es6$promise$$internal$$fulfill(promise, enumerator._result);
 	      }
 	    };
-
+	
 	    lib$es6$promise$enumerator$$Enumerator.prototype._willSettleAt = function(promise, i) {
 	      var enumerator = this;
-
+	
 	      lib$es6$promise$$internal$$subscribe(promise, undefined, function(value) {
 	        enumerator._settledAt(lib$es6$promise$$internal$$FULFILLED, i, value);
 	      }, function(reason) {
@@ -1022,39 +1122,39 @@
 	    function lib$es6$promise$promise$race$$race(entries) {
 	      /*jshint validthis:true */
 	      var Constructor = this;
-
+	
 	      var promise = new Constructor(lib$es6$promise$$internal$$noop);
-
+	
 	      if (!lib$es6$promise$utils$$isArray(entries)) {
 	        lib$es6$promise$$internal$$reject(promise, new TypeError('You must pass an array to race.'));
 	        return promise;
 	      }
-
+	
 	      var length = entries.length;
-
+	
 	      function onFulfillment(value) {
 	        lib$es6$promise$$internal$$resolve(promise, value);
 	      }
-
+	
 	      function onRejection(reason) {
 	        lib$es6$promise$$internal$$reject(promise, reason);
 	      }
-
+	
 	      for (var i = 0; promise._state === lib$es6$promise$$internal$$PENDING && i < length; i++) {
 	        lib$es6$promise$$internal$$subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
 	      }
-
+	
 	      return promise;
 	    }
 	    var lib$es6$promise$promise$race$$default = lib$es6$promise$promise$race$$race;
 	    function lib$es6$promise$promise$resolve$$resolve(object) {
 	      /*jshint validthis:true */
 	      var Constructor = this;
-
+	
 	      if (object && typeof object === 'object' && object.constructor === Constructor) {
 	        return object;
 	      }
-
+	
 	      var promise = new Constructor(lib$es6$promise$$internal$$noop);
 	      lib$es6$promise$$internal$$resolve(promise, object);
 	      return promise;
@@ -1068,83 +1168,83 @@
 	      return promise;
 	    }
 	    var lib$es6$promise$promise$reject$$default = lib$es6$promise$promise$reject$$reject;
-
+	
 	    var lib$es6$promise$promise$$counter = 0;
-
+	
 	    function lib$es6$promise$promise$$needsResolver() {
 	      throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
 	    }
-
+	
 	    function lib$es6$promise$promise$$needsNew() {
 	      throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
 	    }
-
+	
 	    var lib$es6$promise$promise$$default = lib$es6$promise$promise$$Promise;
 	    /**
 	      Promise objects represent the eventual result of an asynchronous operation. The
 	      primary way of interacting with a promise is through its `then` method, which
 	      registers callbacks to receive either a promise’s eventual value or the reason
 	      why the promise cannot be fulfilled.
-
+	
 	      Terminology
 	      -----------
-
+	
 	      - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
 	      - `thenable` is an object or function that defines a `then` method.
 	      - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
 	      - `exception` is a value that is thrown using the throw statement.
 	      - `reason` is a value that indicates why a promise was rejected.
 	      - `settled` the final resting state of a promise, fulfilled or rejected.
-
+	
 	      A promise can be in one of three states: pending, fulfilled, or rejected.
-
+	
 	      Promises that are fulfilled have a fulfillment value and are in the fulfilled
 	      state.  Promises that are rejected have a rejection reason and are in the
 	      rejected state.  A fulfillment value is never a thenable.
-
+	
 	      Promises can also be said to *resolve* a value.  If this value is also a
 	      promise, then the original promise's settled state will match the value's
 	      settled state.  So a promise that *resolves* a promise that rejects will
 	      itself reject, and a promise that *resolves* a promise that fulfills will
 	      itself fulfill.
-
-
+	
+	
 	      Basic Usage:
 	      ------------
-
+	
 	      ```js
 	      var promise = new Promise(function(resolve, reject) {
 	        // on success
 	        resolve(value);
-
+	
 	        // on failure
 	        reject(reason);
 	      });
-
+	
 	      promise.then(function(value) {
 	        // on fulfillment
 	      }, function(reason) {
 	        // on rejection
 	      });
 	      ```
-
+	
 	      Advanced Usage:
 	      ---------------
-
+	
 	      Promises shine when abstracting away asynchronous interactions such as
 	      `XMLHttpRequest`s.
-
+	
 	      ```js
 	      function getJSON(url) {
 	        return new Promise(function(resolve, reject){
 	          var xhr = new XMLHttpRequest();
-
+	
 	          xhr.open('GET', url);
 	          xhr.onreadystatechange = handler;
 	          xhr.responseType = 'json';
 	          xhr.setRequestHeader('Accept', 'application/json');
 	          xhr.send();
-
+	
 	          function handler() {
 	            if (this.readyState === this.DONE) {
 	              if (this.status === 200) {
@@ -1156,16 +1256,16 @@
 	          };
 	        });
 	      }
-
+	
 	      getJSON('/posts.json').then(function(json) {
 	        // on fulfillment
 	      }, function(reason) {
 	        // on rejection
 	      });
 	      ```
-
+	
 	      Unlike callbacks, promises are great composable primitives.
-
+	
 	      ```js
 	      Promise.all([
 	        getJSON('/posts'),
@@ -1173,11 +1273,11 @@
 	      ]).then(function(values){
 	        values[0] // => postsJSON
 	        values[1] // => commentsJSON
-
+	
 	        return values;
 	      });
 	      ```
-
+	
 	      @class Promise
 	      @param {function} resolver
 	      Useful for tooling.
@@ -1188,33 +1288,33 @@
 	      this._state = undefined;
 	      this._result = undefined;
 	      this._subscribers = [];
-
+	
 	      if (lib$es6$promise$$internal$$noop !== resolver) {
 	        if (!lib$es6$promise$utils$$isFunction(resolver)) {
 	          lib$es6$promise$promise$$needsResolver();
 	        }
-
+	
 	        if (!(this instanceof lib$es6$promise$promise$$Promise)) {
 	          lib$es6$promise$promise$$needsNew();
 	        }
-
+	
 	        lib$es6$promise$$internal$$initializePromise(this, resolver);
 	      }
 	    }
-
+	
 	    lib$es6$promise$promise$$Promise.all = lib$es6$promise$promise$all$$default;
 	    lib$es6$promise$promise$$Promise.race = lib$es6$promise$promise$race$$default;
 	    lib$es6$promise$promise$$Promise.resolve = lib$es6$promise$promise$resolve$$default;
 	    lib$es6$promise$promise$$Promise.reject = lib$es6$promise$promise$reject$$default;
-
+	
 	    lib$es6$promise$promise$$Promise.prototype = {
 	      constructor: lib$es6$promise$promise$$Promise,
-
+	
 	    /**
 	      The primary way of interacting with a promise is through its `then` method,
 	      which registers callbacks to receive either a promise's eventual value or the
 	      reason why the promise cannot be fulfilled.
-
+	
 	      ```js
 	      findUser().then(function(user){
 	        // user is available
@@ -1222,14 +1322,14 @@
 	        // user is unavailable, and you are given the reason why
 	      });
 	      ```
-
+	
 	      Chaining
 	      --------
-
+	
 	      The return value of `then` is itself a promise.  This second, 'downstream'
 	      promise is resolved with the return value of the first promise's fulfillment
 	      or rejection handler, or rejected if the handler throws an exception.
-
+	
 	      ```js
 	      findUser().then(function (user) {
 	        return user.name;
@@ -1239,7 +1339,7 @@
 	        // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
 	        // will be `'default name'`
 	      });
-
+	
 	      findUser().then(function (user) {
 	        throw new Error('Found user, but still unhappy');
 	      }, function (reason) {
@@ -1252,7 +1352,7 @@
 	      });
 	      ```
 	      If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
-
+	
 	      ```js
 	      findUser().then(function (user) {
 	        throw new PedagogicalException('Upstream error');
@@ -1264,15 +1364,15 @@
 	        // The `PedgagocialException` is propagated all the way down to here
 	      });
 	      ```
-
+	
 	      Assimilation
 	      ------------
-
+	
 	      Sometimes the value you want to propagate to a downstream promise can only be
 	      retrieved asynchronously. This can be achieved by returning a promise in the
 	      fulfillment or rejection handler. The downstream promise will then be pending
 	      until the returned promise is settled. This is called *assimilation*.
-
+	
 	      ```js
 	      findUser().then(function (user) {
 	        return findCommentsByAuthor(user);
@@ -1280,9 +1380,9 @@
 	        // The user's comments are now available
 	      });
 	      ```
-
+	
 	      If the assimliated promise rejects, then the downstream promise will also reject.
-
+	
 	      ```js
 	      findUser().then(function (user) {
 	        return findCommentsByAuthor(user);
@@ -1292,15 +1392,15 @@
 	        // If `findCommentsByAuthor` rejects, we'll have the reason here
 	      });
 	      ```
-
+	
 	      Simple Example
 	      --------------
-
+	
 	      Synchronous Example
-
+	
 	      ```javascript
 	      var result;
-
+	
 	      try {
 	        result = findResult();
 	        // success
@@ -1308,9 +1408,9 @@
 	        // failure
 	      }
 	      ```
-
+	
 	      Errback Example
-
+	
 	      ```js
 	      findResult(function(result, err){
 	        if (err) {
@@ -1320,9 +1420,9 @@
 	        }
 	      });
 	      ```
-
+	
 	      Promise Example;
-
+	
 	      ```javascript
 	      findResult().then(function(result){
 	        // success
@@ -1330,15 +1430,15 @@
 	        // failure
 	      });
 	      ```
-
+	
 	      Advanced Example
 	      --------------
-
+	
 	      Synchronous Example
-
+	
 	      ```javascript
 	      var author, books;
-
+	
 	      try {
 	        author = findAuthor();
 	        books  = findBooksByAuthor(author);
@@ -1347,19 +1447,19 @@
 	        // failure
 	      }
 	      ```
-
+	
 	      Errback Example
-
+	
 	      ```js
-
+	
 	      function foundBooks(books) {
-
+	
 	      }
-
+	
 	      function failure(reason) {
-
+	
 	      }
-
+	
 	      findAuthor(function(author, err){
 	        if (err) {
 	          failure(err);
@@ -1384,9 +1484,9 @@
 	        }
 	      });
 	      ```
-
+	
 	      Promise Example;
-
+	
 	      ```javascript
 	      findAuthor().
 	        then(findBooksByAuthor).
@@ -1396,7 +1496,7 @@
 	        // something went wrong
 	      });
 	      ```
-
+	
 	      @method then
 	      @param {Function} onFulfilled
 	      @param {Function} onRejected
@@ -1406,14 +1506,14 @@
 	      then: function(onFulfillment, onRejection) {
 	        var parent = this;
 	        var state = parent._state;
-
+	
 	        if (state === lib$es6$promise$$internal$$FULFILLED && !onFulfillment || state === lib$es6$promise$$internal$$REJECTED && !onRejection) {
 	          return this;
 	        }
-
+	
 	        var child = new this.constructor(lib$es6$promise$$internal$$noop);
 	        var result = parent._result;
-
+	
 	        if (state) {
 	          var callback = arguments[state - 1];
 	          lib$es6$promise$asap$$default(function(){
@@ -1422,32 +1522,32 @@
 	        } else {
 	          lib$es6$promise$$internal$$subscribe(parent, child, onFulfillment, onRejection);
 	        }
-
+	
 	        return child;
 	      },
-
+	
 	    /**
 	      `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
 	      as the catch block of a try/catch statement.
-
+	
 	      ```js
 	      function findAuthor(){
 	        throw new Error('couldn't find that author');
 	      }
-
+	
 	      // synchronous
 	      try {
 	        findAuthor();
 	      } catch(reason) {
 	        // something went wrong
 	      }
-
+	
 	      // async with promises
 	      findAuthor().catch(function(reason){
 	        // something went wrong
 	      });
 	      ```
-
+	
 	      @method catch
 	      @param {Function} onRejection
 	      Useful for tooling.
@@ -1459,7 +1559,7 @@
 	    };
 	    function lib$es6$promise$polyfill$$polyfill() {
 	      var local;
-
+	
 	      if (typeof global !== 'undefined') {
 	          local = global;
 	      } else if (typeof self !== 'undefined') {
@@ -1471,75 +1571,74 @@
 	              throw new Error('polyfill failed because global object is unavailable in this environment');
 	          }
 	      }
-
+	
 	      var P = local.Promise;
-
+	
 	      if (P && Object.prototype.toString.call(P.resolve()) === '[object Promise]' && !P.cast) {
 	        return;
 	      }
-
+	
 	      local.Promise = lib$es6$promise$promise$$default;
 	    }
 	    var lib$es6$promise$polyfill$$default = lib$es6$promise$polyfill$$polyfill;
-
+	
 	    var lib$es6$promise$umd$$ES6Promise = {
 	      'Promise': lib$es6$promise$promise$$default,
 	      'polyfill': lib$es6$promise$polyfill$$default
 	    };
-
+	
 	    /* global define:true module:true window: true */
-	    if ("function" === 'function' && __webpack_require__(46)['amd']) {
+	    if ("function" === 'function' && __webpack_require__(10)['amd']) {
 	      !(__WEBPACK_AMD_DEFINE_RESULT__ = function() { return lib$es6$promise$umd$$ES6Promise; }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	    } else if (typeof module !== 'undefined' && module['exports']) {
 	      module['exports'] = lib$es6$promise$umd$$ES6Promise;
 	    } else if (typeof this !== 'undefined') {
 	      this['ES6Promise'] = lib$es6$promise$umd$$ES6Promise;
 	    }
-
+	
 	    lib$es6$promise$polyfill$$default();
 	}).call(this);
-
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(12), __webpack_require__(6).setImmediate, (function() { return this; }()), __webpack_require__(47)(module)))
+	
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(1).setImmediate, (function() { return this; }()), __webpack_require__(3)(module)))
 
 /***/ },
-
-/***/ 17:
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hasOwn = Object.prototype.hasOwnProperty;
 	var toStr = Object.prototype.toString;
 	var undefined;
-
+	
 	var isArray = function isArray(arr) {
 		if (typeof Array.isArray === 'function') {
 			return Array.isArray(arr);
 		}
-
+	
 		return toStr.call(arr) === '[object Array]';
 	};
-
+	
 	var isPlainObject = function isPlainObject(obj) {
 		'use strict';
 		if (!obj || toStr.call(obj) !== '[object Object]') {
 			return false;
 		}
-
+	
 		var has_own_constructor = hasOwn.call(obj, 'constructor');
 		var has_is_property_of_method = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
 		// Not own constructor property must be Object
 		if (obj.constructor && !has_own_constructor && !has_is_property_of_method) {
 			return false;
 		}
-
+	
 		// Own properties are enumerated firstly, so to speed up,
 		// if last one is own, then all properties are own.
 		var key;
 		for (key in obj) {}
-
+	
 		return key === undefined || hasOwn.call(obj, key);
 	};
-
+	
 	module.exports = function extend() {
 		'use strict';
 		var options, name, src, copy, copyIsArray, clone,
@@ -1547,7 +1646,7 @@
 			i = 1,
 			length = arguments.length,
 			deep = false;
-
+	
 		// Handle a deep copy situation
 		if (typeof target === 'boolean') {
 			deep = target;
@@ -1557,7 +1656,7 @@
 		} else if ((typeof target !== 'object' && typeof target !== 'function') || target == null) {
 			target = {};
 		}
-
+	
 		for (; i < length; ++i) {
 			options = arguments[i];
 			// Only deal with non-null/undefined values
@@ -1566,12 +1665,12 @@
 				for (name in options) {
 					src = target[name];
 					copy = options[name];
-
+	
 					// Prevent never-ending loop
 					if (target === copy) {
 						continue;
 					}
-
+	
 					// Recurse if we're merging plain objects or arrays
 					if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
 						if (copyIsArray) {
@@ -1580,10 +1679,10 @@
 						} else {
 							clone = src && isPlainObject(src) ? src : {};
 						}
-
+	
 						// Never move original objects, clone them
 						target[name] = extend(deep, clone, copy);
-
+	
 					// Don't bring in undefined values
 					} else if (copy !== undefined) {
 						target[name] = copy;
@@ -1591,231 +1690,15 @@
 				}
 			}
 		}
-
+	
 		// Return the modified object
 		return target;
 	};
-
-
-
-/***/ },
-
-/***/ 45:
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(clearImmediate, process) {(function (global, undefined) {
-	    "use strict";
-
-	    if (global.setImmediate) {
-	        return;
-	    }
-
-	    var nextHandle = 1; // Spec says greater than zero
-	    var tasksByHandle = {};
-	    var currentlyRunningATask = false;
-	    var doc = global.document;
-	    var setImmediate;
-
-	    function addFromSetImmediateArguments(args) {
-	        tasksByHandle[nextHandle] = partiallyApplied.apply(undefined, args);
-	        return nextHandle++;
-	    }
-
-	    // This function accepts the same arguments as setImmediate, but
-	    // returns a function that requires no arguments.
-	    function partiallyApplied(handler) {
-	        var args = [].slice.call(arguments, 1);
-	        return function() {
-	            if (typeof handler === "function") {
-	                handler.apply(undefined, args);
-	            } else {
-	                (new Function("" + handler))();
-	            }
-	        };
-	    }
-
-	    function runIfPresent(handle) {
-	        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
-	        // So if we're currently running a task, we'll need to delay this invocation.
-	        if (currentlyRunningATask) {
-	            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
-	            // "too much recursion" error.
-	            setTimeout(partiallyApplied(runIfPresent, handle), 0);
-	        } else {
-	            var task = tasksByHandle[handle];
-	            if (task) {
-	                currentlyRunningATask = true;
-	                try {
-	                    task();
-	                } finally {
-	                    clearImmediate(handle);
-	                    currentlyRunningATask = false;
-	                }
-	            }
-	        }
-	    }
-
-	    function clearImmediate(handle) {
-	        delete tasksByHandle[handle];
-	    }
-
-	    function installNextTickImplementation() {
-	        setImmediate = function() {
-	            var handle = addFromSetImmediateArguments(arguments);
-	            process.nextTick(partiallyApplied(runIfPresent, handle));
-	            return handle;
-	        };
-	    }
-
-	    function canUsePostMessage() {
-	        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
-	        // where `global.postMessage` means something completely different and can't be used for this purpose.
-	        if (global.postMessage && !global.importScripts) {
-	            var postMessageIsAsynchronous = true;
-	            var oldOnMessage = global.onmessage;
-	            global.onmessage = function() {
-	                postMessageIsAsynchronous = false;
-	            };
-	            global.postMessage("", "*");
-	            global.onmessage = oldOnMessage;
-	            return postMessageIsAsynchronous;
-	        }
-	    }
-
-	    function installPostMessageImplementation() {
-	        // Installs an event handler on `global` for the `message` event: see
-	        // * https://developer.mozilla.org/en/DOM/window.postMessage
-	        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
-
-	        var messagePrefix = "setImmediate$" + Math.random() + "$";
-	        var onGlobalMessage = function(event) {
-	            if (event.source === global &&
-	                typeof event.data === "string" &&
-	                event.data.indexOf(messagePrefix) === 0) {
-	                runIfPresent(+event.data.slice(messagePrefix.length));
-	            }
-	        };
-
-	        if (global.addEventListener) {
-	            global.addEventListener("message", onGlobalMessage, false);
-	        } else {
-	            global.attachEvent("onmessage", onGlobalMessage);
-	        }
-
-	        setImmediate = function() {
-	            var handle = addFromSetImmediateArguments(arguments);
-	            global.postMessage(messagePrefix + handle, "*");
-	            return handle;
-	        };
-	    }
-
-	    function installMessageChannelImplementation() {
-	        var channel = new MessageChannel();
-	        channel.port1.onmessage = function(event) {
-	            var handle = event.data;
-	            runIfPresent(handle);
-	        };
-
-	        setImmediate = function() {
-	            var handle = addFromSetImmediateArguments(arguments);
-	            channel.port2.postMessage(handle);
-	            return handle;
-	        };
-	    }
-
-	    function installReadyStateChangeImplementation() {
-	        var html = doc.documentElement;
-	        setImmediate = function() {
-	            var handle = addFromSetImmediateArguments(arguments);
-	            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
-	            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
-	            var script = doc.createElement("script");
-	            script.onreadystatechange = function () {
-	                runIfPresent(handle);
-	                script.onreadystatechange = null;
-	                html.removeChild(script);
-	                script = null;
-	            };
-	            html.appendChild(script);
-	            return handle;
-	        };
-	    }
-
-	    function installSetTimeoutImplementation() {
-	        setImmediate = function() {
-	            var handle = addFromSetImmediateArguments(arguments);
-	            setTimeout(partiallyApplied(runIfPresent, handle), 0);
-	            return handle;
-	        };
-	    }
-
-	    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
-	    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
-	    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
-
-	    // Don't get fooled by e.g. browserify environments.
-	    if ({}.toString.call(global.process) === "[object process]") {
-	        // For Node.js before 0.9
-	        installNextTickImplementation();
-
-	    } else if (canUsePostMessage()) {
-	        // For non-IE10 modern browsers
-	        installPostMessageImplementation();
-
-	    } else if (global.MessageChannel) {
-	        // For web workers, where supported
-	        installMessageChannelImplementation();
-
-	    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
-	        // For IE 6–8
-	        installReadyStateChangeImplementation();
-
-	    } else {
-	        // For older browsers
-	        installSetTimeoutImplementation();
-	    }
-
-	    attachTo.setImmediate = setImmediate;
-	    attachTo.clearImmediate = clearImmediate;
-	}(new Function("return this")()));
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6).clearImmediate, __webpack_require__(12)))
-
-/***/ },
-
-/***/ 46:
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = function() { throw new Error("define cannot be used indirect"); };
+	
 
 
 /***/ },
-
-/***/ 47:
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = function(module) {
-		if(!module.webpackPolyfill) {
-			module.deprecate = function() {};
-			module.paths = [];
-			// module.parent = undefined by default
-			module.children = [];
-			module.webpackPolyfill = 1;
-		}
-		return module;
-	}
-
-
-/***/ },
-
-/***/ 48:
-/***/ function(module, exports, __webpack_require__) {
-
-	/* (ignored) */
-
-/***/ },
-
-/***/ 52:
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/**
@@ -1828,13 +1711,13 @@
 	 * Available under MIT license <https://lodash.com/license>
 	 */
 	;(function() {
-
+	
 	  /** Used as a safe reference for `undefined` in pre-ES5 environments. */
 	  var undefined;
-
+	
 	  /** Used as the semantic version number. */
 	  var VERSION = '3.7.0';
-
+	
 	  /** Used to compose bitmasks for wrapper metadata. */
 	  var BIND_FLAG = 1,
 	      BIND_KEY_FLAG = 2,
@@ -1845,26 +1728,26 @@
 	      PARTIAL_RIGHT_FLAG = 64,
 	      ARY_FLAG = 128,
 	      REARG_FLAG = 256;
-
+	
 	  /** Used as default options for `_.trunc`. */
 	  var DEFAULT_TRUNC_LENGTH = 30,
 	      DEFAULT_TRUNC_OMISSION = '...';
-
+	
 	  /** Used to detect when a function becomes hot. */
 	  var HOT_COUNT = 150,
 	      HOT_SPAN = 16;
-
+	
 	  /** Used to indicate the type of lazy iteratees. */
 	  var LAZY_DROP_WHILE_FLAG = 0,
 	      LAZY_FILTER_FLAG = 1,
 	      LAZY_MAP_FLAG = 2;
-
+	
 	  /** Used as the `TypeError` message for "Functions" methods. */
 	  var FUNC_ERROR_TEXT = 'Expected a function';
-
+	
 	  /** Used as the internal argument placeholder. */
 	  var PLACEHOLDER = '__lodash_placeholder__';
-
+	
 	  /** `Object#toString` result references. */
 	  var argsTag = '[object Arguments]',
 	      arrayTag = '[object Array]',
@@ -1879,7 +1762,7 @@
 	      setTag = '[object Set]',
 	      stringTag = '[object String]',
 	      weakMapTag = '[object WeakMap]';
-
+	
 	  var arrayBufferTag = '[object ArrayBuffer]',
 	      float32Tag = '[object Float32Array]',
 	      float64Tag = '[object Float64Array]',
@@ -1890,28 +1773,28 @@
 	      uint8ClampedTag = '[object Uint8ClampedArray]',
 	      uint16Tag = '[object Uint16Array]',
 	      uint32Tag = '[object Uint32Array]';
-
+	
 	  /** Used to match empty string literals in compiled template source. */
 	  var reEmptyStringLeading = /\b__p \+= '';/g,
 	      reEmptyStringMiddle = /\b(__p \+=) '' \+/g,
 	      reEmptyStringTrailing = /(__e\(.*?\)|\b__t\)) \+\n'';/g;
-
+	
 	  /** Used to match HTML entities and HTML characters. */
 	  var reEscapedHtml = /&(?:amp|lt|gt|quot|#39|#96);/g,
 	      reUnescapedHtml = /[&<>"'`]/g,
 	      reHasEscapedHtml = RegExp(reEscapedHtml.source),
 	      reHasUnescapedHtml = RegExp(reUnescapedHtml.source);
-
+	
 	  /** Used to match template delimiters. */
 	  var reEscape = /<%-([\s\S]+?)%>/g,
 	      reEvaluate = /<%([\s\S]+?)%>/g,
 	      reInterpolate = /<%=([\s\S]+?)%>/g;
-
+	
 	  /** Used to match property names within property paths. */
 	  var reIsDeepProp = /\.|\[(?:[^[\]]+|(["'])(?:(?!\1)[^\n\\]|\\.)*?)\1\]/,
 	      reIsPlainProp = /^\w*$/,
 	      rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\n\\]|\\.)*?)\2)\]/g;
-
+	
 	  /**
 	   * Used to match `RegExp` [special characters](http://www.regular-expressions.info/characters.html#special).
 	   * In addition to special characters the forward slash is escaped to allow for
@@ -1919,54 +1802,54 @@
 	   */
 	  var reRegExpChars = /[.*+?^${}()|[\]\/\\]/g,
 	      reHasRegExpChars = RegExp(reRegExpChars.source);
-
+	
 	  /** Used to match [combining diacritical marks](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks). */
 	  var reComboMark = /[\u0300-\u036f\ufe20-\ufe23]/g;
-
+	
 	  /** Used to match backslashes in property paths. */
 	  var reEscapeChar = /\\(\\)?/g;
-
+	
 	  /** Used to match [ES template delimiters](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-template-literal-lexical-components). */
 	  var reEsTemplate = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g;
-
+	
 	  /** Used to match `RegExp` flags from their coerced string values. */
 	  var reFlags = /\w*$/;
-
+	
 	  /** Used to detect hexadecimal string values. */
 	  var reHasHexPrefix = /^0[xX]/;
-
+	
 	  /** Used to detect host constructors (Safari > 5). */
 	  var reIsHostCtor = /^\[object .+?Constructor\]$/;
-
+	
 	  /** Used to match latin-1 supplementary letters (excluding mathematical operators). */
 	  var reLatin1 = /[\xc0-\xd6\xd8-\xde\xdf-\xf6\xf8-\xff]/g;
-
+	
 	  /** Used to ensure capturing order of template delimiters. */
 	  var reNoMatch = /($^)/;
-
+	
 	  /** Used to match unescaped characters in compiled string literals. */
 	  var reUnescapedString = /['\n\r\u2028\u2029\\]/g;
-
+	
 	  /** Used to match words to create compound words. */
 	  var reWords = (function() {
 	    var upper = '[A-Z\\xc0-\\xd6\\xd8-\\xde]',
 	        lower = '[a-z\\xdf-\\xf6\\xf8-\\xff]+';
-
+	
 	    return RegExp(upper + '+(?=' + upper + lower + ')|' + upper + '?' + lower + '|' + upper + '+|[0-9]+', 'g');
 	  }());
-
+	
 	  /** Used to detect and test for whitespace. */
 	  var whitespace = (
 	    // Basic whitespace characters.
 	    ' \t\x0b\f\xa0\ufeff' +
-
+	
 	    // Line terminators.
 	    '\n\r\u2028\u2029' +
-
+	
 	    // Unicode category "Zs" space separators.
 	    '\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000'
 	  );
-
+	
 	  /** Used to assign default `context` object properties. */
 	  var contextProps = [
 	    'Array', 'ArrayBuffer', 'Date', 'Error', 'Float32Array', 'Float64Array',
@@ -1976,10 +1859,10 @@
 	    'Uint8ClampedArray', 'Uint16Array', 'Uint32Array', 'WeakMap',
 	    'window'
 	  ];
-
+	
 	  /** Used to make template sourceURLs easier to identify. */
 	  var templateCounter = -1;
-
+	
 	  /** Used to identify `toStringTag` values of typed arrays. */
 	  var typedArrayTags = {};
 	  typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
@@ -1994,7 +1877,7 @@
 	  typedArrayTags[numberTag] = typedArrayTags[objectTag] =
 	  typedArrayTags[regexpTag] = typedArrayTags[setTag] =
 	  typedArrayTags[stringTag] = typedArrayTags[weakMapTag] = false;
-
+	
 	  /** Used to identify `toStringTag` values supported by `_.clone`. */
 	  var cloneableTags = {};
 	  cloneableTags[argsTag] = cloneableTags[arrayTag] =
@@ -2009,14 +1892,14 @@
 	  cloneableTags[errorTag] = cloneableTags[funcTag] =
 	  cloneableTags[mapTag] = cloneableTags[setTag] =
 	  cloneableTags[weakMapTag] = false;
-
+	
 	  /** Used as an internal `_.debounce` options object by `_.throttle`. */
 	  var debounceOptions = {
 	    'leading': false,
 	    'maxWait': 0,
 	    'trailing': false
 	  };
-
+	
 	  /** Used to map latin-1 supplementary letters to basic latin letters. */
 	  var deburredLetters = {
 	    '\xc0': 'A',  '\xc1': 'A', '\xc2': 'A', '\xc3': 'A', '\xc4': 'A', '\xc5': 'A',
@@ -2037,7 +1920,7 @@
 	    '\xde': 'Th', '\xfe': 'th',
 	    '\xdf': 'ss'
 	  };
-
+	
 	  /** Used to map characters to HTML entities. */
 	  var htmlEscapes = {
 	    '&': '&amp;',
@@ -2047,7 +1930,7 @@
 	    "'": '&#39;',
 	    '`': '&#96;'
 	  };
-
+	
 	  /** Used to map HTML entities to characters. */
 	  var htmlUnescapes = {
 	    '&amp;': '&',
@@ -2057,13 +1940,13 @@
 	    '&#39;': "'",
 	    '&#96;': '`'
 	  };
-
+	
 	  /** Used to determine if values are of the language type `Object`. */
 	  var objectTypes = {
 	    'function': true,
 	    'object': true
 	  };
-
+	
 	  /** Used to escape characters for inclusion in compiled string literals. */
 	  var stringEscapes = {
 	    '\\': '\\',
@@ -2073,25 +1956,25 @@
 	    '\u2028': 'u2028',
 	    '\u2029': 'u2029'
 	  };
-
+	
 	  /** Detect free variable `exports`. */
 	  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
-
+	
 	  /** Detect free variable `module`. */
 	  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
-
+	
 	  /** Detect free variable `global` from Node.js. */
 	  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
-
+	
 	  /** Detect free variable `self`. */
 	  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
-
+	
 	  /** Detect free variable `window`. */
 	  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
-
+	
 	  /** Detect the popular CommonJS extension `module.exports`. */
 	  var moduleExports = freeModule && freeModule.exports === freeExports && freeExports;
-
+	
 	  /**
 	   * Used as a reference to the global object.
 	   *
@@ -2099,9 +1982,9 @@
 	   * restricted `window` object, otherwise the `window` object is used.
 	   */
 	  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
-
+	
 	  /*--------------------------------------------------------------------------*/
-
+	
 	  /**
 	   * The base implementation of `compareAscending` which compares values and
 	   * sorts them in ascending order without guaranteeing a stable sort.
@@ -2115,7 +1998,7 @@
 	    if (value !== other) {
 	      var valIsReflexive = value === value,
 	          othIsReflexive = other === other;
-
+	
 	      if (value > other || !valIsReflexive || (value === undefined && othIsReflexive)) {
 	        return 1;
 	      }
@@ -2125,7 +2008,7 @@
 	    }
 	    return 0;
 	  }
-
+	
 	  /**
 	   * The base implementation of `_.findIndex` and `_.findLastIndex` without
 	   * support for callback shorthands and `this` binding.
@@ -2139,7 +2022,7 @@
 	  function baseFindIndex(array, predicate, fromRight) {
 	    var length = array.length,
 	        index = fromRight ? length : -1;
-
+	
 	    while ((fromRight ? index-- : ++index < length)) {
 	      if (predicate(array[index], index, array)) {
 	        return index;
@@ -2147,7 +2030,7 @@
 	    }
 	    return -1;
 	  }
-
+	
 	  /**
 	   * The base implementation of `_.indexOf` without support for binary searches.
 	   *
@@ -2163,7 +2046,7 @@
 	    }
 	    var index = fromIndex - 1,
 	        length = array.length;
-
+	
 	    while (++index < length) {
 	      if (array[index] === value) {
 	        return index;
@@ -2171,7 +2054,7 @@
 	    }
 	    return -1;
 	  }
-
+	
 	  /**
 	   * The base implementation of `_.isFunction` without support for environments
 	   * with incorrect `typeof` results.
@@ -2185,7 +2068,7 @@
 	    // See https://github.com/jashkenas/underscore/issues/1621 for more details.
 	    return typeof value == 'function' || false;
 	  }
-
+	
 	  /**
 	   * Converts `value` to a string if it is not one. An empty string is returned
 	   * for `null` or `undefined` values.
@@ -2200,7 +2083,7 @@
 	    }
 	    return value == null ? '' : (value + '');
 	  }
-
+	
 	  /**
 	   * Used by `_.max` and `_.min` as the default callback for string values.
 	   *
@@ -2211,7 +2094,7 @@
 	  function charAtCallback(string) {
 	    return string.charCodeAt(0);
 	  }
-
+	
 	  /**
 	   * Used by `_.trim` and `_.trimLeft` to get the index of the first character
 	   * of `string` that is not found in `chars`.
@@ -2224,11 +2107,11 @@
 	  function charsLeftIndex(string, chars) {
 	    var index = -1,
 	        length = string.length;
-
+	
 	    while (++index < length && chars.indexOf(string.charAt(index)) > -1) {}
 	    return index;
 	  }
-
+	
 	  /**
 	   * Used by `_.trim` and `_.trimRight` to get the index of the last character
 	   * of `string` that is not found in `chars`.
@@ -2240,11 +2123,11 @@
 	   */
 	  function charsRightIndex(string, chars) {
 	    var index = string.length;
-
+	
 	    while (index-- && chars.indexOf(string.charAt(index)) > -1) {}
 	    return index;
 	  }
-
+	
 	  /**
 	   * Used by `_.sortBy` to compare transformed elements of a collection and stable
 	   * sort them in ascending order.
@@ -2257,7 +2140,7 @@
 	  function compareAscending(object, other) {
 	    return baseCompareAscending(object.criteria, other.criteria) || (object.index - other.index);
 	  }
-
+	
 	  /**
 	   * Used by `_.sortByOrder` to compare multiple properties of each element
 	   * in a collection and stable sort them in the following order:
@@ -2278,7 +2161,7 @@
 	        othCriteria = other.criteria,
 	        length = objCriteria.length,
 	        ordersLength = orders.length;
-
+	
 	    while (++index < length) {
 	      var result = baseCompareAscending(objCriteria[index], othCriteria[index]);
 	      if (result) {
@@ -2297,7 +2180,7 @@
 	    // See https://code.google.com/p/v8/issues/detail?id=90 for more details.
 	    return object.index - other.index;
 	  }
-
+	
 	  /**
 	   * Used by `_.deburr` to convert latin-1 supplementary letters to basic latin letters.
 	   *
@@ -2308,7 +2191,7 @@
 	  function deburrLetter(letter) {
 	    return deburredLetters[letter];
 	  }
-
+	
 	  /**
 	   * Used by `_.escape` to convert characters to HTML entities.
 	   *
@@ -2319,7 +2202,7 @@
 	  function escapeHtmlChar(chr) {
 	    return htmlEscapes[chr];
 	  }
-
+	
 	  /**
 	   * Used by `_.template` to escape characters for inclusion in compiled
 	   * string literals.
@@ -2331,7 +2214,7 @@
 	  function escapeStringChar(chr) {
 	    return '\\' + stringEscapes[chr];
 	  }
-
+	
 	  /**
 	   * Gets the index at which the first occurrence of `NaN` is found in `array`.
 	   *
@@ -2344,7 +2227,7 @@
 	  function indexOfNaN(array, fromIndex, fromRight) {
 	    var length = array.length,
 	        index = fromIndex + (fromRight ? 0 : -1);
-
+	
 	    while ((fromRight ? index-- : ++index < length)) {
 	      var other = array[index];
 	      if (other !== other) {
@@ -2353,7 +2236,7 @@
 	    }
 	    return -1;
 	  }
-
+	
 	  /**
 	   * Checks if `value` is object-like.
 	   *
@@ -2364,7 +2247,7 @@
 	  function isObjectLike(value) {
 	    return !!value && typeof value == 'object';
 	  }
-
+	
 	  /**
 	   * Used by `trimmedLeftIndex` and `trimmedRightIndex` to determine if a
 	   * character code is whitespace.
@@ -2377,7 +2260,7 @@
 	    return ((charCode <= 160 && (charCode >= 9 && charCode <= 13) || charCode == 32 || charCode == 160) || charCode == 5760 || charCode == 6158 ||
 	      (charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279)));
 	  }
-
+	
 	  /**
 	   * Replaces all `placeholder` elements in `array` with an internal placeholder
 	   * and returns an array of their indexes.
@@ -2392,7 +2275,7 @@
 	        length = array.length,
 	        resIndex = -1,
 	        result = [];
-
+	
 	    while (++index < length) {
 	      if (array[index] === placeholder) {
 	        array[index] = PLACEHOLDER;
@@ -2401,7 +2284,7 @@
 	    }
 	    return result;
 	  }
-
+	
 	  /**
 	   * An implementation of `_.uniq` optimized for sorted arrays without support
 	   * for callback shorthands and `this` binding.
@@ -2417,11 +2300,11 @@
 	        length = array.length,
 	        resIndex = -1,
 	        result = [];
-
+	
 	    while (++index < length) {
 	      var value = array[index],
 	          computed = iteratee ? iteratee(value, index, array) : value;
-
+	
 	      if (!index || seen !== computed) {
 	        seen = computed;
 	        result[++resIndex] = value;
@@ -2429,7 +2312,7 @@
 	    }
 	    return result;
 	  }
-
+	
 	  /**
 	   * Used by `_.trim` and `_.trimLeft` to get the index of the first non-whitespace
 	   * character of `string`.
@@ -2441,11 +2324,11 @@
 	  function trimmedLeftIndex(string) {
 	    var index = -1,
 	        length = string.length;
-
+	
 	    while (++index < length && isSpace(string.charCodeAt(index))) {}
 	    return index;
 	  }
-
+	
 	  /**
 	   * Used by `_.trim` and `_.trimRight` to get the index of the last non-whitespace
 	   * character of `string`.
@@ -2456,11 +2339,11 @@
 	   */
 	  function trimmedRightIndex(string) {
 	    var index = string.length;
-
+	
 	    while (index-- && isSpace(string.charCodeAt(index))) {}
 	    return index;
 	  }
-
+	
 	  /**
 	   * Used by `_.unescape` to convert HTML entities to characters.
 	   *
@@ -2471,9 +2354,9 @@
 	  function unescapeHtmlChar(chr) {
 	    return htmlUnescapes[chr];
 	  }
-
+	
 	  /*--------------------------------------------------------------------------*/
-
+	
 	  /**
 	   * Create a new pristine `lodash` function using the given `context` object.
 	   *
@@ -2515,7 +2398,7 @@
 	    // ES5 clears this up by stating that literals must use built-in constructors.
 	    // See https://es5.github.io/#x11.1.5 for more details.
 	    context = context ? _.defaults(root.Object(), context, _.pick(root, contextProps)) : root;
-
+	
 	    /** Native constructor references. */
 	    var Array = context.Array,
 	        Date = context.Date,
@@ -2527,39 +2410,39 @@
 	        RegExp = context.RegExp,
 	        String = context.String,
 	        TypeError = context.TypeError;
-
+	
 	    /** Used for native method references. */
 	    var arrayProto = Array.prototype,
 	        objectProto = Object.prototype,
 	        stringProto = String.prototype;
-
+	
 	    /** Used to detect DOM support. */
 	    var document = (document = context.window) && document.document;
-
+	
 	    /** Used to resolve the decompiled source of functions. */
 	    var fnToString = Function.prototype.toString;
-
+	
 	    /** Used to check objects for own properties. */
 	    var hasOwnProperty = objectProto.hasOwnProperty;
-
+	
 	    /** Used to generate unique IDs. */
 	    var idCounter = 0;
-
+	
 	    /**
 	     * Used to resolve the [`toStringTag`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-object.prototype.tostring)
 	     * of values.
 	     */
 	    var objToString = objectProto.toString;
-
+	
 	    /** Used to restore the original `_` reference in `_.noConflict`. */
 	    var oldDash = context._;
-
+	
 	    /** Used to detect if a method is native. */
 	    var reIsNative = RegExp('^' +
 	      escapeRegExp(objToString)
 	      .replace(/toString|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 	    );
-
+	
 	    /** Native method references. */
 	    var ArrayBuffer = isNative(ArrayBuffer = context.ArrayBuffer) && ArrayBuffer,
 	        bufferSlice = isNative(bufferSlice = ArrayBuffer && new ArrayBuffer(0).slice) && bufferSlice,
@@ -2576,7 +2459,7 @@
 	        splice = arrayProto.splice,
 	        Uint8Array = isNative(Uint8Array = context.Uint8Array) && Uint8Array,
 	        WeakMap = isNative(WeakMap = context.WeakMap) && WeakMap;
-
+	
 	    /** Used to clone array buffers. */
 	    var Float64Array = (function() {
 	      // Safari 5 errors when using an array buffer to initialize a typed array
@@ -2588,7 +2471,7 @@
 	      } catch(e) {}
 	      return result;
 	    }());
-
+	
 	    /** Used as `baseAssign`. */
 	    var nativeAssign = (function() {
 	      // Avoid `Object.assign` in Firefox 34-37 which have an early implementation
@@ -2600,11 +2483,11 @@
 	      // to assign values to readonly indexes of strings in strict mode.
 	      var object = { '1': 0 },
 	          func = preventExtensions && isNative(func = Object.assign) && func;
-
+	
 	      try { func(preventExtensions(object), 'xo'); } catch(e) {}
 	      return !object[1] && func;
 	    }());
-
+	
 	    /* Native method references for those with the same name as other `lodash` methods. */
 	    var nativeIsArray = isNative(nativeIsArray = Array.isArray) && nativeIsArray,
 	        nativeCreate = isNative(nativeCreate = Object.create) && nativeCreate,
@@ -2616,33 +2499,33 @@
 	        nativeNumIsFinite = isNative(nativeNumIsFinite = Number.isFinite) && nativeNumIsFinite,
 	        nativeParseInt = context.parseInt,
 	        nativeRandom = Math.random;
-
+	
 	    /** Used as references for `-Infinity` and `Infinity`. */
 	    var NEGATIVE_INFINITY = Number.NEGATIVE_INFINITY,
 	        POSITIVE_INFINITY = Number.POSITIVE_INFINITY;
-
+	
 	    /** Used as references for the maximum length and index of an array. */
 	    var MAX_ARRAY_LENGTH = Math.pow(2, 32) - 1,
 	        MAX_ARRAY_INDEX =  MAX_ARRAY_LENGTH - 1,
 	        HALF_MAX_ARRAY_LENGTH = MAX_ARRAY_LENGTH >>> 1;
-
+	
 	    /** Used as the size, in bytes, of each `Float64Array` element. */
 	    var FLOAT64_BYTES_PER_ELEMENT = Float64Array ? Float64Array.BYTES_PER_ELEMENT : 0;
-
+	
 	    /**
 	     * Used as the [maximum length](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.max_safe_integer)
 	     * of an array-like value.
 	     */
 	    var MAX_SAFE_INTEGER = Math.pow(2, 53) - 1;
-
+	
 	    /** Used to store function metadata. */
 	    var metaMap = WeakMap && new WeakMap;
-
+	
 	    /** Used to lookup unminified function names. */
 	    var realNames = {};
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates a `lodash` object which wraps `value` to enable implicit chaining.
 	     * Methods that operate on and return arrays, collections, and functions can
@@ -2747,7 +2630,7 @@
 	      }
 	      return new LodashWrapper(value);
 	    }
-
+	
 	    /**
 	     * The function whose prototype all chaining wrappers inherit from.
 	     *
@@ -2756,7 +2639,7 @@
 	    function baseLodash() {
 	      // No operation performed.
 	    }
-
+	
 	    /**
 	     * The base constructor for creating `lodash` wrapper objects.
 	     *
@@ -2770,7 +2653,7 @@
 	      this.__actions__ = actions || [];
 	      this.__chain__ = !!chainAll;
 	    }
-
+	
 	    /**
 	     * An object environment feature flags.
 	     *
@@ -2779,15 +2662,15 @@
 	     * @type Object
 	     */
 	    var support = lodash.support = {};
-
+	
 	    (function(x) {
 	      var Ctor = function() { this.x = x; },
 	          object = { '0': x, 'length': x },
 	          props = [];
-
+	
 	      Ctor.prototype = { 'valueOf': x, 'y': x };
 	      for (var key in new Ctor) { props.push(key); }
-
+	
 	      /**
 	       * Detect if functions can be decompiled by `Function#toString`
 	       * (all but Firefox OS certified apps, older Opera mobile browsers, and
@@ -2797,7 +2680,7 @@
 	       * @type boolean
 	       */
 	      support.funcDecomp = /\bthis\b/.test(function() { return this; });
-
+	
 	      /**
 	       * Detect if `Function#name` is supported (all but IE).
 	       *
@@ -2805,7 +2688,7 @@
 	       * @type boolean
 	       */
 	      support.funcNames = typeof Function.name == 'string';
-
+	
 	      /**
 	       * Detect if the DOM is supported.
 	       *
@@ -2817,7 +2700,7 @@
 	      } catch(e) {
 	        support.dom = false;
 	      }
-
+	
 	      /**
 	       * Detect if `arguments` object indexes are non-enumerable.
 	       *
@@ -2836,7 +2719,7 @@
 	        support.nonEnumArgs = true;
 	      }
 	    }(1, 0));
-
+	
 	    /**
 	     * By default, the template delimiters used by lodash are like those in
 	     * embedded Ruby (ERB). Change the following template settings to use
@@ -2847,7 +2730,7 @@
 	     * @type Object
 	     */
 	    lodash.templateSettings = {
-
+	
 	      /**
 	       * Used to detect `data` property values to be HTML-escaped.
 	       *
@@ -2855,7 +2738,7 @@
 	       * @type RegExp
 	       */
 	      'escape': reEscape,
-
+	
 	      /**
 	       * Used to detect code to be evaluated.
 	       *
@@ -2863,7 +2746,7 @@
 	       * @type RegExp
 	       */
 	      'evaluate': reEvaluate,
-
+	
 	      /**
 	       * Used to detect `data` property values to inject.
 	       *
@@ -2871,7 +2754,7 @@
 	       * @type RegExp
 	       */
 	      'interpolate': reInterpolate,
-
+	
 	      /**
 	       * Used to reference the data object in the template text.
 	       *
@@ -2879,7 +2762,7 @@
 	       * @type string
 	       */
 	      'variable': '',
-
+	
 	      /**
 	       * Used to import variables into the compiled template.
 	       *
@@ -2887,7 +2770,7 @@
 	       * @type Object
 	       */
 	      'imports': {
-
+	
 	        /**
 	         * A reference to the `lodash` function.
 	         *
@@ -2897,9 +2780,9 @@
 	        '_': lodash
 	      }
 	    };
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates a lazy wrapper object which wraps `value` to enable lazy evaluation.
 	     *
@@ -2916,7 +2799,7 @@
 	      this.__takeCount__ = POSITIVE_INFINITY;
 	      this.__views__ = null;
 	    }
-
+	
 	    /**
 	     * Creates a clone of the lazy wrapper object.
 	     *
@@ -2930,7 +2813,7 @@
 	          iteratees = this.__iteratees__,
 	          views = this.__views__,
 	          result = new LazyWrapper(this.__wrapped__);
-
+	
 	      result.__actions__ = actions ? arrayCopy(actions) : null;
 	      result.__dir__ = this.__dir__;
 	      result.__filtered__ = this.__filtered__;
@@ -2939,7 +2822,7 @@
 	      result.__views__ = views ? arrayCopy(views) : null;
 	      return result;
 	    }
-
+	
 	    /**
 	     * Reverses the direction of lazy iteration.
 	     *
@@ -2959,7 +2842,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Extracts the unwrapped value from its lazy wrapper.
 	     *
@@ -2985,19 +2868,19 @@
 	          iterLength = iteratees ? iteratees.length : 0,
 	          resIndex = 0,
 	          result = [];
-
+	
 	      outer:
 	      while (length-- && resIndex < takeCount) {
 	        index += dir;
-
+	
 	        var iterIndex = -1,
 	            value = array[index];
-
+	
 	        while (++iterIndex < iterLength) {
 	          var data = iteratees[iterIndex],
 	              iteratee = data.iteratee,
 	              type = data.type;
-
+	
 	          if (type == LAZY_DROP_WHILE_FLAG) {
 	            if (data.done && (isRight ? (index > data.index) : (index < data.index))) {
 	              data.count = 0;
@@ -3027,9 +2910,9 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates a cache object to store key/value pairs.
 	     *
@@ -3041,7 +2924,7 @@
 	    function MapCache() {
 	      this.__data__ = {};
 	    }
-
+	
 	    /**
 	     * Removes `key` and its value from the cache.
 	     *
@@ -3054,7 +2937,7 @@
 	    function mapDelete(key) {
 	      return this.has(key) && delete this.__data__[key];
 	    }
-
+	
 	    /**
 	     * Gets the cached value for `key`.
 	     *
@@ -3067,7 +2950,7 @@
 	    function mapGet(key) {
 	      return key == '__proto__' ? undefined : this.__data__[key];
 	    }
-
+	
 	    /**
 	     * Checks if a cached value for `key` exists.
 	     *
@@ -3080,7 +2963,7 @@
 	    function mapHas(key) {
 	      return key != '__proto__' && hasOwnProperty.call(this.__data__, key);
 	    }
-
+	
 	    /**
 	     * Sets `value` to `key` of the cache.
 	     *
@@ -3097,9 +2980,9 @@
 	      }
 	      return this;
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     *
 	     * Creates a cache object to store unique values.
@@ -3109,13 +2992,13 @@
 	     */
 	    function SetCache(values) {
 	      var length = values ? values.length : 0;
-
+	
 	      this.data = { 'hash': nativeCreate(null), 'set': new Set };
 	      while (length--) {
 	        this.push(values[length]);
 	      }
 	    }
-
+	
 	    /**
 	     * Checks if `value` is in `cache` mimicking the return signature of
 	     * `_.indexOf` by returning `0` if the value is found, else `-1`.
@@ -3128,10 +3011,10 @@
 	    function cacheIndexOf(cache, value) {
 	      var data = cache.data,
 	          result = (typeof value == 'string' || isObject(value)) ? data.set.has(value) : data.hash[value];
-
+	
 	      return result ? 0 : -1;
 	    }
-
+	
 	    /**
 	     * Adds `value` to the cache.
 	     *
@@ -3148,9 +3031,9 @@
 	        data.hash[value] = true;
 	      }
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Copies the values of `source` to `array`.
 	     *
@@ -3162,14 +3045,14 @@
 	    function arrayCopy(source, array) {
 	      var index = -1,
 	          length = source.length;
-
+	
 	      array || (array = Array(length));
 	      while (++index < length) {
 	        array[index] = source[index];
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.forEach` for arrays without support for callback
 	     * shorthands and `this` binding.
@@ -3182,7 +3065,7 @@
 	    function arrayEach(array, iteratee) {
 	      var index = -1,
 	          length = array.length;
-
+	
 	      while (++index < length) {
 	        if (iteratee(array[index], index, array) === false) {
 	          break;
@@ -3190,7 +3073,7 @@
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.forEachRight` for arrays without support for
 	     * callback shorthands and `this` binding.
@@ -3202,7 +3085,7 @@
 	     */
 	    function arrayEachRight(array, iteratee) {
 	      var length = array.length;
-
+	
 	      while (length--) {
 	        if (iteratee(array[length], length, array) === false) {
 	          break;
@@ -3210,7 +3093,7 @@
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.every` for arrays without support for callback
 	     * shorthands and `this` binding.
@@ -3224,7 +3107,7 @@
 	    function arrayEvery(array, predicate) {
 	      var index = -1,
 	          length = array.length;
-
+	
 	      while (++index < length) {
 	        if (!predicate(array[index], index, array)) {
 	          return false;
@@ -3232,7 +3115,7 @@
 	      }
 	      return true;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.filter` for arrays without support for callback
 	     * shorthands and `this` binding.
@@ -3247,7 +3130,7 @@
 	          length = array.length,
 	          resIndex = -1,
 	          result = [];
-
+	
 	      while (++index < length) {
 	        var value = array[index];
 	        if (predicate(value, index, array)) {
@@ -3256,7 +3139,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.map` for arrays without support for callback
 	     * shorthands and `this` binding.
@@ -3270,13 +3153,13 @@
 	      var index = -1,
 	          length = array.length,
 	          result = Array(length);
-
+	
 	      while (++index < length) {
 	        result[index] = iteratee(array[index], index, array);
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.max` for arrays without support for iteratees.
 	     *
@@ -3288,7 +3171,7 @@
 	      var index = -1,
 	          length = array.length,
 	          result = NEGATIVE_INFINITY;
-
+	
 	      while (++index < length) {
 	        var value = array[index];
 	        if (value > result) {
@@ -3297,7 +3180,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.min` for arrays without support for iteratees.
 	     *
@@ -3309,7 +3192,7 @@
 	      var index = -1,
 	          length = array.length,
 	          result = POSITIVE_INFINITY;
-
+	
 	      while (++index < length) {
 	        var value = array[index];
 	        if (value < result) {
@@ -3318,7 +3201,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.reduce` for arrays without support for callback
 	     * shorthands and `this` binding.
@@ -3334,7 +3217,7 @@
 	    function arrayReduce(array, iteratee, accumulator, initFromArray) {
 	      var index = -1,
 	          length = array.length;
-
+	
 	      if (initFromArray && length) {
 	        accumulator = array[++index];
 	      }
@@ -3343,7 +3226,7 @@
 	      }
 	      return accumulator;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.reduceRight` for arrays without support for
 	     * callback shorthands and `this` binding.
@@ -3366,7 +3249,7 @@
 	      }
 	      return accumulator;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.some` for arrays without support for callback
 	     * shorthands and `this` binding.
@@ -3380,7 +3263,7 @@
 	    function arraySome(array, predicate) {
 	      var index = -1,
 	          length = array.length;
-
+	
 	      while (++index < length) {
 	        if (predicate(array[index], index, array)) {
 	          return true;
@@ -3388,7 +3271,7 @@
 	      }
 	      return false;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.sum` for arrays without support for iteratees.
 	     *
@@ -3399,13 +3282,13 @@
 	    function arraySum(array) {
 	      var length = array.length,
 	          result = 0;
-
+	
 	      while (length--) {
 	        result += +array[length] || 0;
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Used by `_.defaults` to customize its `_.assign` use.
 	     *
@@ -3417,7 +3300,7 @@
 	    function assignDefaults(objectValue, sourceValue) {
 	      return objectValue === undefined ? sourceValue : objectValue;
 	    }
-
+	
 	    /**
 	     * Used by `_.template` to customize its `_.assign` use.
 	     *
@@ -3436,7 +3319,7 @@
 	        ? sourceValue
 	        : objectValue;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.assign` for customizing assigned values without
 	     * support for argument juggling, multiple sources, and `this` binding `customizer`
@@ -3451,15 +3334,15 @@
 	    function assignWith(object, source, customizer) {
 	      var props = keys(source);
 	      push.apply(props, getSymbols(source));
-
+	
 	      var index = -1,
 	          length = props.length;
-
+	
 	      while (++index < length) {
 	        var key = props[index],
 	            value = object[key],
 	            result = customizer(value, source[key], key, object, source);
-
+	
 	        if ((result === result ? (result !== value) : (value === value)) ||
 	            (value === undefined && !(key in object))) {
 	          object[key] = result;
@@ -3467,7 +3350,7 @@
 	      }
 	      return object;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.assign` without support for argument juggling,
 	     * multiple sources, and `customizer` functions.
@@ -3482,7 +3365,7 @@
 	        ? object
 	        : baseCopy(source, getSymbols(source), baseCopy(source, keys(source), object));
 	    };
-
+	
 	    /**
 	     * The base implementation of `_.at` without support for string collections
 	     * and individual key arguments.
@@ -3498,7 +3381,7 @@
 	          isArr = isLength(length),
 	          propsLength = props.length,
 	          result = Array(propsLength);
-
+	
 	      while(++index < propsLength) {
 	        var key = props[index];
 	        if (isArr) {
@@ -3509,7 +3392,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Copies properties of `source` to `object`.
 	     *
@@ -3521,17 +3404,17 @@
 	     */
 	    function baseCopy(source, props, object) {
 	      object || (object = {});
-
+	
 	      var index = -1,
 	          length = props.length;
-
+	
 	      while (++index < length) {
 	        var key = props[index];
 	        object[key] = source[key];
 	      }
 	      return object;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.callback` which supports specifying the
 	     * number of arguments to provide to `func`.
@@ -3559,7 +3442,7 @@
 	        ? property(func)
 	        : baseMatchesProperty(func, thisArg);
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.clone` without support for argument juggling
 	     * and `this` binding `customizer` functions.
@@ -3594,7 +3477,7 @@
 	      } else {
 	        var tag = objToString.call(value),
 	            isFunc = tag == funcTag;
-
+	
 	        if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
 	          result = initCloneObject(isFunc ? {} : value);
 	          if (!isDeep) {
@@ -3609,7 +3492,7 @@
 	      // Check for circular references and return corresponding clone.
 	      stackA || (stackA = []);
 	      stackB || (stackB = []);
-
+	
 	      var length = stackA.length;
 	      while (length--) {
 	        if (stackA[length] == value) {
@@ -3619,14 +3502,14 @@
 	      // Add the source value to the stack of traversed objects and associate it with its clone.
 	      stackA.push(value);
 	      stackB.push(result);
-
+	
 	      // Recursively populate clone (susceptible to call stack limits).
 	      (isArr ? arrayEach : baseForOwn)(value, function(subValue, key) {
 	        result[key] = baseClone(subValue, isDeep, customizer, key, value, stackA, stackB);
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.create` without support for assigning
 	     * properties to the created object.
@@ -3646,7 +3529,7 @@
 	        return result || context.Object();
 	      };
 	    }());
-
+	
 	    /**
 	     * The base implementation of `_.delay` and `_.defer` which accepts an index
 	     * of where to slice the arguments to provide to `func`.
@@ -3663,7 +3546,7 @@
 	      }
 	      return setTimeout(function() { func.apply(undefined, args); }, wait);
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.difference` which accepts a single array
 	     * of values to exclude.
@@ -3676,7 +3559,7 @@
 	    function baseDifference(array, values) {
 	      var length = array ? array.length : 0,
 	          result = [];
-
+	
 	      if (!length) {
 	        return result;
 	      }
@@ -3685,7 +3568,7 @@
 	          isCommon = indexOf == baseIndexOf,
 	          cache = (isCommon && values.length >= 200) ? createCache(values) : null,
 	          valuesLength = values.length;
-
+	
 	      if (cache) {
 	        indexOf = cacheIndexOf;
 	        isCommon = false;
@@ -3694,7 +3577,7 @@
 	      outer:
 	      while (++index < length) {
 	        var value = array[index];
-
+	
 	        if (isCommon && value === value) {
 	          var valuesIndex = valuesLength;
 	          while (valuesIndex--) {
@@ -3710,7 +3593,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.forEach` without support for callback
 	     * shorthands and `this` binding.
@@ -3721,7 +3604,7 @@
 	     * @returns {Array|Object|string} Returns `collection`.
 	     */
 	    var baseEach = createBaseEach(baseForOwn);
-
+	
 	    /**
 	     * The base implementation of `_.forEachRight` without support for callback
 	     * shorthands and `this` binding.
@@ -3732,7 +3615,7 @@
 	     * @returns {Array|Object|string} Returns `collection`.
 	     */
 	    var baseEachRight = createBaseEach(baseForOwnRight, true);
-
+	
 	    /**
 	     * The base implementation of `_.every` without support for callback
 	     * shorthands and `this` binding.
@@ -3751,7 +3634,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.fill` without an iteratee call guard.
 	     *
@@ -3764,7 +3647,7 @@
 	     */
 	    function baseFill(array, value, start, end) {
 	      var length = array.length;
-
+	
 	      start = start == null ? 0 : (+start || 0);
 	      if (start < 0) {
 	        start = -start > length ? 0 : (length + start);
@@ -3775,13 +3658,13 @@
 	      }
 	      length = start > end ? 0 : (end >>> 0);
 	      start >>>= 0;
-
+	
 	      while (start < length) {
 	        array[start++] = value;
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.filter` without support for callback
 	     * shorthands and `this` binding.
@@ -3800,7 +3683,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.find`, `_.findLast`, `_.findKey`, and `_.findLastKey`,
 	     * without support for callback shorthands and `this` binding, which iterates
@@ -3824,7 +3707,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.flatten` with added support for restricting
 	     * flattening and specifying the start index.
@@ -3840,10 +3723,10 @@
 	          length = array.length,
 	          resIndex = -1,
 	          result = [];
-
+	
 	      while (++index < length) {
 	        var value = array[index];
-
+	
 	        if (isObjectLike(value) && isLength(value.length) && (isArray(value) || isArguments(value))) {
 	          if (isDeep) {
 	            // Recursively flatten arrays (susceptible to call stack limits).
@@ -3851,7 +3734,7 @@
 	          }
 	          var valIndex = -1,
 	              valLength = value.length;
-
+	
 	          result.length += valLength;
 	          while (++valIndex < valLength) {
 	            result[++resIndex] = value[valIndex];
@@ -3862,7 +3745,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `baseForIn` and `baseForOwn` which iterates
 	     * over `object` properties returned by `keysFunc` invoking `iteratee` for
@@ -3876,7 +3759,7 @@
 	     * @returns {Object} Returns `object`.
 	     */
 	    var baseFor = createBaseFor();
-
+	
 	    /**
 	     * This function is like `baseFor` except that it iterates over properties
 	     * in the opposite order.
@@ -3888,7 +3771,7 @@
 	     * @returns {Object} Returns `object`.
 	     */
 	    var baseForRight = createBaseFor(true);
-
+	
 	    /**
 	     * The base implementation of `_.forIn` without support for callback
 	     * shorthands and `this` binding.
@@ -3901,7 +3784,7 @@
 	    function baseForIn(object, iteratee) {
 	      return baseFor(object, iteratee, keysIn);
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.forOwn` without support for callback
 	     * shorthands and `this` binding.
@@ -3914,7 +3797,7 @@
 	    function baseForOwn(object, iteratee) {
 	      return baseFor(object, iteratee, keys);
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.forOwnRight` without support for callback
 	     * shorthands and `this` binding.
@@ -3927,7 +3810,7 @@
 	    function baseForOwnRight(object, iteratee) {
 	      return baseForRight(object, iteratee, keys);
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.functions` which creates an array of
 	     * `object` function property names filtered from those provided.
@@ -3942,7 +3825,7 @@
 	          length = props.length,
 	          resIndex = -1,
 	          result = [];
-
+	
 	      while (++index < length) {
 	        var key = props[index];
 	        if (isFunction(object[key])) {
@@ -3951,7 +3834,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `get` without support for string paths
 	     * and default values.
@@ -3971,13 +3854,13 @@
 	      }
 	      var index = -1,
 	          length = path.length;
-
+	
 	      while (object != null && ++index < length) {
 	        var result = object = object[path[index]];
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.isEqual` without support for `this` binding
 	     * `customizer` functions.
@@ -3999,7 +3882,7 @@
 	      }
 	      var valType = typeof value,
 	          othType = typeof other;
-
+	
 	      // Exit early for unlike primitive values.
 	      if ((valType != 'function' && valType != 'object' && othType != 'function' && othType != 'object') ||
 	          value == null || other == null) {
@@ -4008,7 +3891,7 @@
 	      }
 	      return baseIsEqualDeep(value, other, baseIsEqual, customizer, isLoose, stackA, stackB);
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseIsEqual` for arrays and objects which performs
 	     * deep comparisons and tracks traversed objects enabling objects with circular
@@ -4029,7 +3912,7 @@
 	          othIsArr = isArray(other),
 	          objTag = arrayTag,
 	          othTag = arrayTag;
-
+	
 	      if (!objIsArr) {
 	        objTag = objToString.call(object);
 	        if (objTag == argsTag) {
@@ -4049,14 +3932,14 @@
 	      var objIsObj = objTag == objectTag,
 	          othIsObj = othTag == objectTag,
 	          isSameTag = objTag == othTag;
-
+	
 	      if (isSameTag && !(objIsArr || objIsObj)) {
 	        return equalByTag(object, other, objTag);
 	      }
 	      if (!isLoose) {
 	        var valWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'),
 	            othWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
-
+	
 	        if (valWrapped || othWrapped) {
 	          return equalFunc(valWrapped ? object.value() : object, othWrapped ? other.value() : other, customizer, isLoose, stackA, stackB);
 	        }
@@ -4068,7 +3951,7 @@
 	      // For more information on detecting circular references see https://es5.github.io/#JO.
 	      stackA || (stackA = []);
 	      stackB || (stackB = []);
-
+	
 	      var length = stackA.length;
 	      while (length--) {
 	        if (stackA[length] == object) {
@@ -4078,15 +3961,15 @@
 	      // Add `object` and `other` to the stack of traversed objects.
 	      stackA.push(object);
 	      stackB.push(other);
-
+	
 	      var result = (objIsArr ? equalArrays : equalObjects)(object, other, equalFunc, customizer, isLoose, stackA, stackB);
-
+	
 	      stackA.pop();
 	      stackB.pop();
-
+	
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.isMatch` without support for callback
 	     * shorthands and `this` binding.
@@ -4103,7 +3986,7 @@
 	      var index = -1,
 	          length = props.length,
 	          noCustomizer = !customizer;
-
+	
 	      while (++index < length) {
 	        if ((noCustomizer && strictCompareFlags[index])
 	              ? values[index] !== object[props[index]]
@@ -4117,7 +4000,7 @@
 	        var key = props[index],
 	            objValue = object[key],
 	            srcValue = values[index];
-
+	
 	        if (noCustomizer && strictCompareFlags[index]) {
 	          var result = objValue !== undefined || (key in object);
 	        } else {
@@ -4132,7 +4015,7 @@
 	      }
 	      return true;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.map` without support for callback shorthands
 	     * and `this` binding.
@@ -4146,13 +4029,13 @@
 	      var index = -1,
 	          length = getLength(collection),
 	          result = isLength(length) ? Array(length) : [];
-
+	
 	      baseEach(collection, function(value, key, collection) {
 	        result[++index] = iteratee(value, key, collection);
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.matches` which does not clone `source`.
 	     *
@@ -4163,14 +4046,14 @@
 	    function baseMatches(source) {
 	      var props = keys(source),
 	          length = props.length;
-
+	
 	      if (!length) {
 	        return constant(true);
 	      }
 	      if (length == 1) {
 	        var key = props[0],
 	            value = source[key];
-
+	
 	        if (isStrictComparable(value)) {
 	          return function(object) {
 	            if (object == null) {
@@ -4182,7 +4065,7 @@
 	      }
 	      var values = Array(length),
 	          strictCompareFlags = Array(length);
-
+	
 	      while (length--) {
 	        value = source[props[length]];
 	        values[length] = value;
@@ -4192,7 +4075,7 @@
 	        return object != null && baseIsMatch(toObject(object), props, values, strictCompareFlags);
 	      };
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.matchesProperty` which does not which does
 	     * not clone `value`.
@@ -4206,7 +4089,7 @@
 	      var isArr = isArray(path),
 	          isCommon = isKey(path) && isStrictComparable(value),
 	          pathKey = (path + '');
-
+	
 	      path = toPath(path);
 	      return function(object) {
 	        if (object == null) {
@@ -4227,7 +4110,7 @@
 	          : baseIsEqual(value, object[key], null, true);
 	      };
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.merge` without support for argument juggling,
 	     * multiple sources, and `this` binding `customizer` functions.
@@ -4263,7 +4146,7 @@
 	          var value = object[key],
 	              result = customizer ? customizer(value, srcValue, key, object, source) : undefined,
 	              isCommon = result === undefined;
-
+	
 	          if (isCommon) {
 	            result = srcValue;
 	          }
@@ -4275,7 +4158,7 @@
 	      });
 	      return object;
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseMerge` for arrays and objects which performs
 	     * deep merges and tracks traversed objects enabling objects with circular
@@ -4294,7 +4177,7 @@
 	    function baseMergeDeep(object, source, key, mergeFunc, customizer, stackA, stackB) {
 	      var length = stackA.length,
 	          srcValue = source[key];
-
+	
 	      while (length--) {
 	        if (stackA[length] == srcValue) {
 	          object[key] = stackB[length];
@@ -4304,7 +4187,7 @@
 	      var value = object[key],
 	          result = customizer ? customizer(value, srcValue, key, object, source) : undefined,
 	          isCommon = result === undefined;
-
+	
 	      if (isCommon) {
 	        result = srcValue;
 	        if (isLength(srcValue.length) && (isArray(srcValue) || isTypedArray(srcValue))) {
@@ -4325,7 +4208,7 @@
 	      // it with its merged value.
 	      stackA.push(srcValue);
 	      stackB.push(result);
-
+	
 	      if (isCommon) {
 	        // Recursively merge objects and arrays (susceptible to call stack limits).
 	        object[key] = mergeFunc(result, srcValue, customizer, stackA, stackB);
@@ -4333,7 +4216,7 @@
 	        object[key] = result;
 	      }
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.property` without support for deep paths.
 	     *
@@ -4346,7 +4229,7 @@
 	        return object == null ? undefined : object[key];
 	      };
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseProperty` which supports deep paths.
 	     *
@@ -4361,7 +4244,7 @@
 	        return baseGet(object, path, pathKey);
 	      };
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.pullAt` without support for individual
 	     * index arguments and capturing the removed elements.
@@ -4382,7 +4265,7 @@
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.random` without support for argument juggling
 	     * and returning floating-point numbers.
@@ -4395,7 +4278,7 @@
 	    function baseRandom(min, max) {
 	      return min + floor(nativeRandom() * (max - min + 1));
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.reduce` and `_.reduceRight` without support
 	     * for callback shorthands and `this` binding, which iterates over `collection`
@@ -4418,7 +4301,7 @@
 	      });
 	      return accumulator;
 	    }
-
+	
 	    /**
 	     * The base implementation of `setData` without support for hot loop detection.
 	     *
@@ -4431,7 +4314,7 @@
 	      metaMap.set(func, data);
 	      return func;
 	    };
-
+	
 	    /**
 	     * The base implementation of `_.slice` without an iteratee call guard.
 	     *
@@ -4444,7 +4327,7 @@
 	    function baseSlice(array, start, end) {
 	      var index = -1,
 	          length = array.length;
-
+	
 	      start = start == null ? 0 : (+start || 0);
 	      if (start < 0) {
 	        start = -start > length ? 0 : (length + start);
@@ -4455,14 +4338,14 @@
 	      }
 	      length = start > end ? 0 : ((end - start) >>> 0);
 	      start >>>= 0;
-
+	
 	      var result = Array(length);
 	      while (++index < length) {
 	        result[index] = array[index + start];
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.some` without support for callback shorthands
 	     * and `this` binding.
@@ -4475,14 +4358,14 @@
 	     */
 	    function baseSome(collection, predicate) {
 	      var result;
-
+	
 	      baseEach(collection, function(value, index, collection) {
 	        result = predicate(value, index, collection);
 	        return !result;
 	      });
 	      return !!result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.sortBy` which uses `comparer` to define
 	     * the sort order of `array` and replaces criteria objects with their
@@ -4495,14 +4378,14 @@
 	     */
 	    function baseSortBy(array, comparer) {
 	      var length = array.length;
-
+	
 	      array.sort(comparer);
 	      while (length--) {
 	        array[length] = array[length].value;
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.sortByOrder` without param guards.
 	     *
@@ -4515,19 +4398,19 @@
 	    function baseSortByOrder(collection, iteratees, orders) {
 	      var callback = getCallback(),
 	          index = -1;
-
+	
 	      iteratees = arrayMap(iteratees, function(iteratee) { return callback(iteratee); });
-
+	
 	      var result = baseMap(collection, function(value) {
 	        var criteria = arrayMap(iteratees, function(iteratee) { return iteratee(value); });
 	        return { 'criteria': criteria, 'index': ++index, 'value': value };
 	      });
-
+	
 	      return baseSortBy(result, function(object, other) {
 	        return compareMultiple(object, other, orders);
 	      });
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.sum` without support for callback shorthands
 	     * and `this` binding.
@@ -4544,7 +4427,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.uniq` without support for callback shorthands
 	     * and `this` binding.
@@ -4562,7 +4445,7 @@
 	          isLarge = isCommon && length >= 200,
 	          seen = isLarge ? createCache() : null,
 	          result = [];
-
+	
 	      if (seen) {
 	        indexOf = cacheIndexOf;
 	        isCommon = false;
@@ -4574,7 +4457,7 @@
 	      while (++index < length) {
 	        var value = array[index],
 	            computed = iteratee ? iteratee(value, index, array) : value;
-
+	
 	        if (isCommon && value === value) {
 	          var seenIndex = seen.length;
 	          while (seenIndex--) {
@@ -4596,7 +4479,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.values` and `_.valuesIn` which creates an
 	     * array of `object` property values corresponding to the property names
@@ -4611,13 +4494,13 @@
 	      var index = -1,
 	          length = props.length,
 	          result = Array(length);
-
+	
 	      while (++index < length) {
 	        result[index] = object[props[index]];
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * The base implementation of `_.dropRightWhile`, `_.dropWhile`, `_.takeRightWhile`,
 	     * and `_.takeWhile` without support for callback shorthands and `this` binding.
@@ -4632,13 +4515,13 @@
 	    function baseWhile(array, predicate, isDrop, fromRight) {
 	      var length = array.length,
 	          index = fromRight ? length : -1;
-
+	
 	      while ((fromRight ? index-- : ++index < length) && predicate(array[index], index, array)) {}
 	      return isDrop
 	        ? baseSlice(array, (fromRight ? 0 : index), (fromRight ? index + 1 : length))
 	        : baseSlice(array, (fromRight ? index + 1 : 0), (fromRight ? length : index));
 	    }
-
+	
 	    /**
 	     * The base implementation of `wrapperValue` which returns the result of
 	     * performing a sequence of actions on the unwrapped `value`, where each
@@ -4656,17 +4539,17 @@
 	      }
 	      var index = -1,
 	          length = actions.length;
-
+	
 	      while (++index < length) {
 	        var args = [result],
 	            action = actions[index];
-
+	
 	        push.apply(args, action.args);
 	        result = action.func.apply(action.thisArg, args);
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Performs a binary search of `array` to determine the index at which `value`
 	     * should be inserted into `array` in order to maintain its sort order.
@@ -4681,12 +4564,12 @@
 	    function binaryIndex(array, value, retHighest) {
 	      var low = 0,
 	          high = array ? array.length : low;
-
+	
 	      if (typeof value == 'number' && value === value && high <= HALF_MAX_ARRAY_LENGTH) {
 	        while (low < high) {
 	          var mid = (low + high) >>> 1,
 	              computed = array[mid];
-
+	
 	          if (retHighest ? (computed <= value) : (computed < value)) {
 	            low = mid + 1;
 	          } else {
@@ -4697,7 +4580,7 @@
 	      }
 	      return binaryIndexBy(array, value, identity, retHighest);
 	    }
-
+	
 	    /**
 	     * This function is like `binaryIndex` except that it invokes `iteratee` for
 	     * `value` and each element of `array` to compute their sort ranking. The
@@ -4713,17 +4596,17 @@
 	     */
 	    function binaryIndexBy(array, value, iteratee, retHighest) {
 	      value = iteratee(value);
-
+	
 	      var low = 0,
 	          high = array ? array.length : 0,
 	          valIsNaN = value !== value,
 	          valIsUndef = value === undefined;
-
+	
 	      while (low < high) {
 	        var mid = floor((low + high) / 2),
 	            computed = iteratee(array[mid]),
 	            isReflexive = computed === computed;
-
+	
 	        if (valIsNaN) {
 	          var setLow = isReflexive || retHighest;
 	        } else if (valIsUndef) {
@@ -4739,7 +4622,7 @@
 	      }
 	      return nativeMin(high, MAX_ARRAY_INDEX);
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseCallback` which only supports `this` binding
 	     * and specifying the number of arguments to provide to `func`.
@@ -4775,7 +4658,7 @@
 	        return func.apply(thisArg, arguments);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a clone of the given array buffer.
 	     *
@@ -4793,7 +4676,7 @@
 	            floatLength = Float64Array ? floor(byteLength / FLOAT64_BYTES_PER_ELEMENT) : 0,
 	            offset = floatLength * FLOAT64_BYTES_PER_ELEMENT,
 	            result = new ArrayBuffer(byteLength);
-
+	
 	        if (floatLength) {
 	          var view = new Float64Array(result, 0, floatLength);
 	          view.set(new Float64Array(buffer, 0, floatLength));
@@ -4805,7 +4688,7 @@
 	        return result;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates an array that is the composition of partially applied arguments,
 	     * placeholders, and provided arguments into a single array of arguments.
@@ -4823,7 +4706,7 @@
 	          leftIndex = -1,
 	          leftLength = partials.length,
 	          result = Array(argsLength + leftLength);
-
+	
 	      while (++leftIndex < leftLength) {
 	        result[leftIndex] = partials[leftIndex];
 	      }
@@ -4835,7 +4718,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * This function is like `composeArgs` except that the arguments composition
 	     * is tailored for `_.partialRight`.
@@ -4854,7 +4737,7 @@
 	          rightIndex = -1,
 	          rightLength = partials.length,
 	          result = Array(argsLength + rightLength);
-
+	
 	      while (++argsIndex < argsLength) {
 	        result[argsIndex] = args[argsIndex];
 	      }
@@ -4867,7 +4750,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates a function that aggregates a collection, creating an accumulator
 	     * object composed from the results of running each element in the collection
@@ -4885,11 +4768,11 @@
 	      return function(collection, iteratee, thisArg) {
 	        var result = initializer ? initializer() : {};
 	        iteratee = getCallback(iteratee, thisArg, 3);
-
+	
 	        if (isArray(collection)) {
 	          var index = -1,
 	              length = collection.length;
-
+	
 	          while (++index < length) {
 	            var value = collection[index];
 	            setter(result, value, iteratee(value, index, collection), collection);
@@ -4902,7 +4785,7 @@
 	        return result;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that assigns properties of source object(s) to a given
 	     * destination object.
@@ -4920,7 +4803,7 @@
 	            customizer = length > 2 && sources[length - 2],
 	            guard = length > 2 && sources[2],
 	            thisArg = length > 1 && sources[length - 1];
-
+	
 	        if (typeof customizer == 'function') {
 	          customizer = bindCallback(customizer, thisArg, 5);
 	          length -= 2;
@@ -4941,7 +4824,7 @@
 	        return object;
 	      });
 	    }
-
+	
 	    /**
 	     * Creates a `baseEach` or `baseEachRight` function.
 	     *
@@ -4958,7 +4841,7 @@
 	        }
 	        var index = fromRight ? length : -1,
 	            iterable = toObject(collection);
-
+	
 	        while ((fromRight ? index-- : ++index < length)) {
 	          if (iteratee(iterable[index], index, iterable) === false) {
 	            break;
@@ -4967,7 +4850,7 @@
 	        return collection;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a base function for `_.forIn` or `_.forInRight`.
 	     *
@@ -4981,7 +4864,7 @@
 	            props = keysFunc(object),
 	            length = props.length,
 	            index = fromRight ? length : -1;
-
+	
 	        while ((fromRight ? index-- : ++index < length)) {
 	          var key = props[index];
 	          if (iteratee(iterable[key], key, iterable) === false) {
@@ -4991,7 +4874,7 @@
 	        return object;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that wraps `func` and invokes it with the `this`
 	     * binding of `thisArg`.
@@ -5003,14 +4886,14 @@
 	     */
 	    function createBindWrapper(func, thisArg) {
 	      var Ctor = createCtorWrapper(func);
-
+	
 	      function wrapper() {
 	        var fn = (this && this !== root && this instanceof wrapper) ? Ctor : func;
 	        return fn.apply(thisArg, arguments);
 	      }
 	      return wrapper;
 	    }
-
+	
 	    /**
 	     * Creates a `Set` cache object to optimize linear searches of large arrays.
 	     *
@@ -5021,7 +4904,7 @@
 	    var createCache = !(nativeCreate && Set) ? constant(null) : function(values) {
 	      return new SetCache(values);
 	    };
-
+	
 	    /**
 	     * Creates a function that produces compound words out of the words in a
 	     * given string.
@@ -5036,14 +4919,14 @@
 	            array = words(deburr(string)),
 	            length = array.length,
 	            result = '';
-
+	
 	        while (++index < length) {
 	          result = callback(result, array[index], index);
 	        }
 	        return result;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that produces an instance of `Ctor` regardless of
 	     * whether it was invoked as part of a `new` expression or by `call` or `apply`.
@@ -5056,13 +4939,13 @@
 	      return function() {
 	        var thisBinding = baseCreate(Ctor.prototype),
 	            result = Ctor.apply(thisBinding, arguments);
-
+	
 	        // Mimic the constructor's `return` behavior.
 	        // See https://es5.github.io/#x13.2.2 for more details.
 	        return isObject(result) ? result : thisBinding;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a `_.curry` or `_.curryRight` function.
 	     *
@@ -5081,7 +4964,7 @@
 	      }
 	      return curryFunc;
 	    }
-
+	
 	    /**
 	     * Creates a `_.max` or `_.min` function.
 	     *
@@ -5098,7 +4981,7 @@
 	        }
 	        var func = getCallback(),
 	            noIteratee = iteratee == null;
-
+	
 	        if (!(func === baseCallback && noIteratee)) {
 	          noIteratee = false;
 	          iteratee = func(iteratee, thisArg, 3);
@@ -5114,7 +4997,7 @@
 	        return extremumBy(collection, iteratee, isMin);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a `_.find` or `_.findLast` function.
 	     *
@@ -5133,7 +5016,7 @@
 	        return baseFind(collection, predicate, eachFunc);
 	      }
 	    }
-
+	
 	    /**
 	     * Creates a `_.findIndex` or `_.findLastIndex` function.
 	     *
@@ -5150,7 +5033,7 @@
 	        return baseFindIndex(array, predicate, fromRight);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a `_.findKey` or `_.findLastKey` function.
 	     *
@@ -5164,7 +5047,7 @@
 	        return baseFind(object, predicate, objectFunc, true);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a `_.flow` or `_.flowRight` function.
 	     *
@@ -5182,7 +5065,7 @@
 	            index = fromRight ? length : -1,
 	            leftIndex = 0,
 	            funcs = Array(length);
-
+	
 	        while ((fromRight ? index-- : ++index < length)) {
 	          var func = funcs[leftIndex++] = arguments[index];
 	          if (typeof func != 'function') {
@@ -5195,7 +5078,7 @@
 	        while (++index < length) {
 	          func = funcs[index];
 	          funcName = getFuncName(func);
-
+	
 	          var data = funcName == 'wrapper' ? getData(func) : null;
 	          if (data && isLaziable(data[0])) {
 	            wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);
@@ -5210,7 +5093,7 @@
 	          }
 	          var index = 0,
 	              result = funcs[index].apply(this, args);
-
+	
 	          while (++index < length) {
 	            result = funcs[index].call(this, result);
 	          }
@@ -5218,7 +5101,7 @@
 	        };
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function for `_.forEach` or `_.forEachRight`.
 	     *
@@ -5234,7 +5117,7 @@
 	          : eachFunc(collection, bindCallback(iteratee, thisArg, 3));
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function for `_.forIn` or `_.forInRight`.
 	     *
@@ -5250,7 +5133,7 @@
 	        return objectFunc(object, iteratee, keysIn);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function for `_.forOwn` or `_.forOwnRight`.
 	     *
@@ -5266,7 +5149,7 @@
 	        return objectFunc(object, iteratee);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function for `_.padLeft` or `_.padRight`.
 	     *
@@ -5280,7 +5163,7 @@
 	        return string && ((fromRight ? string : '') + createPadding(string, length, chars) + (fromRight ? '' : string));
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a `_.partial` or `_.partialRight` function.
 	     *
@@ -5295,7 +5178,7 @@
 	      });
 	      return partialFunc;
 	    }
-
+	
 	    /**
 	     * Creates a function for `_.reduce` or `_.reduceRight`.
 	     *
@@ -5312,7 +5195,7 @@
 	          : baseReduce(collection, getCallback(iteratee, thisArg, 4), accumulator, initFromArray, eachFunc);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that wraps `func` and invokes it with optional `this`
 	     * binding of, partial application, and currying.
@@ -5337,17 +5220,17 @@
 	          isCurry = bitmask & CURRY_FLAG,
 	          isCurryBound = bitmask & CURRY_BOUND_FLAG,
 	          isCurryRight = bitmask & CURRY_RIGHT_FLAG;
-
+	
 	      var Ctor = !isBindKey && createCtorWrapper(func),
 	          key = func;
-
+	
 	      function wrapper() {
 	        // Avoid `arguments` object use disqualifying optimizations by
 	        // converting it to an array before providing it to other functions.
 	        var length = arguments.length,
 	            index = length,
 	            args = Array(length);
-
+	
 	        while (index--) {
 	          args[index] = arguments[index];
 	        }
@@ -5360,7 +5243,7 @@
 	        if (isCurry || isCurryRight) {
 	          var placeholder = wrapper.placeholder,
 	              argsHolders = replaceHolders(args, placeholder);
-
+	
 	          length -= argsHolders.length;
 	          if (length < arity) {
 	            var newArgPos = argPos ? arrayCopy(argPos) : null,
@@ -5369,16 +5252,16 @@
 	                newHoldersRight = isCurry ? null : argsHolders,
 	                newPartials = isCurry ? args : null,
 	                newPartialsRight = isCurry ? null : args;
-
+	
 	            bitmask |= (isCurry ? PARTIAL_FLAG : PARTIAL_RIGHT_FLAG);
 	            bitmask &= ~(isCurry ? PARTIAL_RIGHT_FLAG : PARTIAL_FLAG);
-
+	
 	            if (!isCurryBound) {
 	              bitmask &= ~(BIND_FLAG | BIND_KEY_FLAG);
 	            }
 	            var newData = [func, bitmask, thisArg, newPartials, newsHolders, newPartialsRight, newHoldersRight, newArgPos, ary, newArity],
 	                result = createHybridWrapper.apply(undefined, newData);
-
+	
 	            if (isLaziable(func)) {
 	              setData(result, newData);
 	            }
@@ -5401,7 +5284,7 @@
 	      }
 	      return wrapper;
 	    }
-
+	
 	    /**
 	     * Creates the padding required for `string` based on the given `length`.
 	     * The `chars` string is truncated if the number of characters exceeds `length`.
@@ -5415,7 +5298,7 @@
 	    function createPadding(string, length, chars) {
 	      var strLength = string.length;
 	      length = +length;
-
+	
 	      if (strLength >= length || !nativeIsFinite(length)) {
 	        return '';
 	      }
@@ -5423,7 +5306,7 @@
 	      chars = chars == null ? ' ' : (chars + '');
 	      return repeat(chars, ceil(padLength / chars.length)).slice(0, padLength);
 	    }
-
+	
 	    /**
 	     * Creates a function that wraps `func` and invokes it with the optional `this`
 	     * binding of `thisArg` and the `partials` prepended to those provided to
@@ -5439,7 +5322,7 @@
 	    function createPartialWrapper(func, bitmask, thisArg, partials) {
 	      var isBind = bitmask & BIND_FLAG,
 	          Ctor = createCtorWrapper(func);
-
+	
 	      function wrapper() {
 	        // Avoid `arguments` object use disqualifying optimizations by
 	        // converting it to an array before providing it `func`.
@@ -5448,7 +5331,7 @@
 	            leftIndex = -1,
 	            leftLength = partials.length,
 	            args = Array(argsLength + leftLength);
-
+	
 	        while (++leftIndex < leftLength) {
 	          args[leftIndex] = partials[leftIndex];
 	        }
@@ -5460,7 +5343,7 @@
 	      }
 	      return wrapper;
 	    }
-
+	
 	    /**
 	     * Creates a `_.sortedIndex` or `_.sortedLastIndex` function.
 	     *
@@ -5476,7 +5359,7 @@
 	          : binaryIndexBy(array, value, func(iteratee, thisArg, 1), retHighest);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that either curries or invokes `func` with optional
 	     * `this` binding and partially applied arguments.
@@ -5516,12 +5399,12 @@
 	      if (bitmask & PARTIAL_RIGHT_FLAG) {
 	        var partialsRight = partials,
 	            holdersRight = holders;
-
+	
 	        partials = holders = null;
 	      }
 	      var data = isBindKey ? null : getData(func),
 	          newData = [func, bitmask, thisArg, partials, holders, partialsRight, holdersRight, argPos, ary, arity];
-
+	
 	      if (data) {
 	        mergeData(newData, data);
 	        bitmask = newData[1];
@@ -5530,7 +5413,7 @@
 	      newData[9] = arity == null
 	        ? (isBindKey ? 0 : func.length)
 	        : (nativeMax(arity - length, 0) || 0);
-
+	
 	      if (bitmask == BIND_FLAG) {
 	        var result = createBindWrapper(newData[0], newData[2]);
 	      } else if ((bitmask == PARTIAL_FLAG || bitmask == (BIND_FLAG | PARTIAL_FLAG)) && !newData[4].length) {
@@ -5541,7 +5424,7 @@
 	      var setter = data ? baseSetData : setData;
 	      return setter(result, newData);
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseIsEqualDeep` for arrays with support for
 	     * partial deep comparisons.
@@ -5561,7 +5444,7 @@
 	          arrLength = array.length,
 	          othLength = other.length,
 	          result = true;
-
+	
 	      if (arrLength != othLength && !(isLoose && othLength > arrLength)) {
 	        return false;
 	      }
@@ -5569,7 +5452,7 @@
 	      while (result && ++index < arrLength) {
 	        var arrValue = array[index],
 	            othValue = other[index];
-
+	
 	        result = undefined;
 	        if (customizer) {
 	          result = isLoose
@@ -5594,7 +5477,7 @@
 	      }
 	      return !!result;
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseIsEqualDeep` for comparing objects of
 	     * the same `toStringTag`.
@@ -5615,17 +5498,17 @@
 	          // Coerce dates and booleans to numbers, dates to milliseconds and booleans
 	          // to `1` or `0` treating invalid dates coerced to `NaN` as not equal.
 	          return +object == +other;
-
+	
 	        case errorTag:
 	          return object.name == other.name && object.message == other.message;
-
+	
 	        case numberTag:
 	          // Treat `NaN` vs. `NaN` as equal.
 	          return (object != +object)
 	            ? other != +other
 	            // But, treat `-0` vs. `+0` as not equal.
 	            : (object == 0 ? ((1 / object) == (1 / other)) : object == +other);
-
+	
 	        case regexpTag:
 	        case stringTag:
 	          // Coerce regexes to strings and treat strings primitives and string
@@ -5634,7 +5517,7 @@
 	      }
 	      return false;
 	    }
-
+	
 	    /**
 	     * A specialized version of `baseIsEqualDeep` for objects with support for
 	     * partial deep comparisons.
@@ -5654,21 +5537,21 @@
 	          objLength = objProps.length,
 	          othProps = keys(other),
 	          othLength = othProps.length;
-
+	
 	      if (objLength != othLength && !isLoose) {
 	        return false;
 	      }
 	      var skipCtor = isLoose,
 	          index = -1;
-
+	
 	      while (++index < objLength) {
 	        var key = objProps[index],
 	            result = isLoose ? key in other : hasOwnProperty.call(other, key);
-
+	
 	        if (result) {
 	          var objValue = object[key],
 	              othValue = other[key];
-
+	
 	          result = undefined;
 	          if (customizer) {
 	            result = isLoose
@@ -5688,7 +5571,7 @@
 	      if (!skipCtor) {
 	        var objCtor = object.constructor,
 	            othCtor = other.constructor;
-
+	
 	        // Non `Object` object instances with different constructors are not equal.
 	        if (objCtor != othCtor &&
 	            ('constructor' in object && 'constructor' in other) &&
@@ -5699,7 +5582,7 @@
 	      }
 	      return true;
 	    }
-
+	
 	    /**
 	     * Gets the extremum value of `collection` invoking `iteratee` for each value
 	     * in `collection` to generate the criterion by which the value is ranked.
@@ -5716,7 +5599,7 @@
 	      var exValue = isMin ? POSITIVE_INFINITY : NEGATIVE_INFINITY,
 	          computed = exValue,
 	          result = computed;
-
+	
 	      baseEach(collection, function(value, index, collection) {
 	        var current = iteratee(value, index, collection);
 	        if ((isMin ? (current < computed) : (current > computed)) ||
@@ -5727,7 +5610,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * Gets the appropriate "callback" function. If the `_.callback` method is
 	     * customized this function returns the custom method, otherwise it returns
@@ -5742,7 +5625,7 @@
 	      result = result === callback ? baseCallback : result;
 	      return argCount ? result(func, thisArg, argCount) : result;
 	    }
-
+	
 	    /**
 	     * Gets metadata for `func`.
 	     *
@@ -5753,7 +5636,7 @@
 	    var getData = !metaMap ? noop : function(func) {
 	      return metaMap.get(func);
 	    };
-
+	
 	    /**
 	     * Gets the name of `func`.
 	     *
@@ -5772,11 +5655,11 @@
 	        var result = func.name,
 	            array = realNames[result],
 	            length = array ? array.length : 0;
-
+	
 	        while (length--) {
 	          var data = array[length],
 	              otherFunc = data.func;
-
+	
 	          if (otherFunc == null || otherFunc == func) {
 	            return data.name;
 	          }
@@ -5784,7 +5667,7 @@
 	        return result;
 	      };
 	    }());
-
+	
 	    /**
 	     * Gets the appropriate "indexOf" function. If the `_.indexOf` method is
 	     * customized this function returns the custom method, otherwise it returns
@@ -5799,7 +5682,7 @@
 	      result = result === indexOf ? baseIndexOf : result;
 	      return collection ? result(collection, target, fromIndex) : result;
 	    }
-
+	
 	    /**
 	     * Gets the "length" property value of `object`.
 	     *
@@ -5811,7 +5694,7 @@
 	     * @returns {*} Returns the "length" value.
 	     */
 	    var getLength = baseProperty('length');
-
+	
 	    /**
 	     * Creates an array of the own symbols of `object`.
 	     *
@@ -5822,7 +5705,7 @@
 	    var getSymbols = !getOwnPropertySymbols ? constant([]) : function(object) {
 	      return getOwnPropertySymbols(toObject(object));
 	    };
-
+	
 	    /**
 	     * Gets the view, applying any `transforms` to the `start` and `end` positions.
 	     *
@@ -5836,11 +5719,11 @@
 	    function getView(start, end, transforms) {
 	      var index = -1,
 	          length = transforms ? transforms.length : 0;
-
+	
 	      while (++index < length) {
 	        var data = transforms[index],
 	            size = data.size;
-
+	
 	        switch (data.type) {
 	          case 'drop':      start += size; break;
 	          case 'dropRight': end -= size; break;
@@ -5850,7 +5733,7 @@
 	      }
 	      return { 'start': start, 'end': end };
 	    }
-
+	
 	    /**
 	     * Initializes an array clone.
 	     *
@@ -5861,7 +5744,7 @@
 	    function initCloneArray(array) {
 	      var length = array.length,
 	          result = new array.constructor(length);
-
+	
 	      // Add array properties assigned by `RegExp#exec`.
 	      if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
 	        result.index = array.index;
@@ -5869,7 +5752,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Initializes an object clone.
 	     *
@@ -5884,7 +5767,7 @@
 	      }
 	      return new Ctor;
 	    }
-
+	
 	    /**
 	     * Initializes an object clone based on its `toStringTag`.
 	     *
@@ -5902,28 +5785,28 @@
 	      switch (tag) {
 	        case arrayBufferTag:
 	          return bufferClone(object);
-
+	
 	        case boolTag:
 	        case dateTag:
 	          return new Ctor(+object);
-
+	
 	        case float32Tag: case float64Tag:
 	        case int8Tag: case int16Tag: case int32Tag:
 	        case uint8Tag: case uint8ClampedTag: case uint16Tag: case uint32Tag:
 	          var buffer = object.buffer;
 	          return new Ctor(isDeep ? bufferClone(buffer) : buffer, object.byteOffset, object.length);
-
+	
 	        case numberTag:
 	        case stringTag:
 	          return new Ctor(object);
-
+	
 	        case regexpTag:
 	          var result = new Ctor(object.source, reFlags.exec(object));
 	          result.lastIndex = object.lastIndex;
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Invokes the method at `path` on `object`.
 	     *
@@ -5942,7 +5825,7 @@
 	      var func = object == null ? object : object[path];
 	      return func == null ? undefined : func.apply(object, args);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a valid array-like index.
 	     *
@@ -5956,7 +5839,7 @@
 	      length = length == null ? MAX_SAFE_INTEGER : length;
 	      return value > -1 && value % 1 == 0 && value < length;
 	    }
-
+	
 	    /**
 	     * Checks if the provided arguments are from an iteratee call.
 	     *
@@ -5983,7 +5866,7 @@
 	      }
 	      return false;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a property name and not a property path.
 	     *
@@ -6003,7 +5886,7 @@
 	      var result = !reIsDeepProp.test(value);
 	      return result || (object != null && value in toObject(object));
 	    }
-
+	
 	    /**
 	     * Checks if `func` has a lazy counterpart.
 	     *
@@ -6015,7 +5898,7 @@
 	      var funcName = getFuncName(func);
 	      return !!funcName && func === lodash[funcName] && funcName in LazyWrapper.prototype;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a valid array-like length.
 	     *
@@ -6028,7 +5911,7 @@
 	    function isLength(value) {
 	      return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
 	     *
@@ -6040,7 +5923,7 @@
 	    function isStrictComparable(value) {
 	      return value === value && (value === 0 ? ((1 / value) > 0) : !isObject(value));
 	    }
-
+	
 	    /**
 	     * Merges the function metadata of `source` into `data`.
 	     *
@@ -6061,12 +5944,12 @@
 	          srcBitmask = source[1],
 	          newBitmask = bitmask | srcBitmask,
 	          isCommon = newBitmask < ARY_FLAG;
-
+	
 	      var isCombo =
 	        (srcBitmask == ARY_FLAG && bitmask == CURRY_FLAG) ||
 	        (srcBitmask == ARY_FLAG && bitmask == REARG_FLAG && data[7].length <= source[8]) ||
 	        (srcBitmask == (ARY_FLAG | REARG_FLAG) && bitmask == CURRY_FLAG);
-
+	
 	      // Exit early if metadata can't be merged.
 	      if (!(isCommon || isCombo)) {
 	        return data;
@@ -6107,10 +5990,10 @@
 	      // Use source `func` and merge bitmasks.
 	      data[0] = source[0];
 	      data[1] = newBitmask;
-
+	
 	      return data;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.pick` that picks `object` properties specified
 	     * by `props`.
@@ -6122,11 +6005,11 @@
 	     */
 	    function pickByArray(object, props) {
 	      object = toObject(object);
-
+	
 	      var index = -1,
 	          length = props.length,
 	          result = {};
-
+	
 	      while (++index < length) {
 	        var key = props[index];
 	        if (key in object) {
@@ -6135,7 +6018,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * A specialized version of `_.pick` that picks `object` properties `predicate`
 	     * returns truthy for.
@@ -6154,7 +6037,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * Reorder `array` according to the specified indexes where the element at
 	     * the first index is assigned as the first element, the element at
@@ -6169,14 +6052,14 @@
 	      var arrLength = array.length,
 	          length = nativeMin(indexes.length, arrLength),
 	          oldArray = arrayCopy(array);
-
+	
 	      while (length--) {
 	        var index = indexes[length];
 	        array[length] = isIndex(index, arrLength) ? oldArray[index] : undefined;
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * Sets metadata for `func`.
 	     *
@@ -6193,11 +6076,11 @@
 	    var setData = (function() {
 	      var count = 0,
 	          lastCalled = 0;
-
+	
 	      return function(key, value) {
 	        var stamp = now(),
 	            remaining = HOT_SPAN - (stamp - lastCalled);
-
+	
 	        lastCalled = stamp;
 	        if (remaining > 0) {
 	          if (++count >= HOT_COUNT) {
@@ -6209,7 +6092,7 @@
 	        return baseSetData(key, value);
 	      };
 	    }());
-
+	
 	    /**
 	     * A fallback implementation of `_.isPlainObject` which checks if `value`
 	     * is an object created by the `Object` constructor or has a `[[Prototype]]`
@@ -6222,7 +6105,7 @@
 	    function shimIsPlainObject(value) {
 	      var Ctor,
 	          support = lodash.support;
-
+	
 	      // Exit early for non `Object` objects.
 	      if (!(isObjectLike(value) && objToString.call(value) == objectTag) ||
 	          (!hasOwnProperty.call(value, 'constructor') &&
@@ -6241,7 +6124,7 @@
 	      });
 	      return result === undefined || hasOwnProperty.call(value, result);
 	    }
-
+	
 	    /**
 	     * A fallback implementation of `Object.keys` which creates an array of the
 	     * own enumerable property names of `object`.
@@ -6255,13 +6138,13 @@
 	          propsLength = props.length,
 	          length = propsLength && object.length,
 	          support = lodash.support;
-
+	
 	      var allowIndexes = length && isLength(length) &&
 	        (isArray(object) || (support.nonEnumArgs && isArguments(object)));
-
+	
 	      var index = -1,
 	          result = [];
-
+	
 	      while (++index < propsLength) {
 	        var key = props[index];
 	        if ((allowIndexes && isIndex(key, length)) || hasOwnProperty.call(object, key)) {
@@ -6270,7 +6153,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Converts `value` to an array-like object if it is not one.
 	     *
@@ -6287,7 +6170,7 @@
 	      }
 	      return isObject(value) ? value : Object(value);
 	    }
-
+	
 	    /**
 	     * Converts `value` to an object if it is not one.
 	     *
@@ -6298,7 +6181,7 @@
 	    function toObject(value) {
 	      return isObject(value) ? value : Object(value);
 	    }
-
+	
 	    /**
 	     * Converts `value` to property path array if it is not one.
 	     *
@@ -6316,7 +6199,7 @@
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates a clone of `wrapper`.
 	     *
@@ -6329,9 +6212,9 @@
 	        ? wrapper.clone()
 	        : new LodashWrapper(wrapper.__wrapped__, wrapper.__chain__, arrayCopy(wrapper.__actions__));
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates an array of elements split into groups the length of `size`.
 	     * If `collection` can't be split evenly, the final chunk will be the remaining
@@ -6362,13 +6245,13 @@
 	          length = array ? array.length : 0,
 	          resIndex = -1,
 	          result = Array(ceil(length / size));
-
+	
 	      while (index < length) {
 	        result[++resIndex] = baseSlice(array, index, (index += size));
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an array with all falsey values removed. The values `false`, `null`,
 	     * `0`, `""`, `undefined`, and `NaN` are falsey.
@@ -6388,7 +6271,7 @@
 	          length = array ? array.length : 0,
 	          resIndex = -1,
 	          result = [];
-
+	
 	      while (++index < length) {
 	        var value = array[index];
 	        if (value) {
@@ -6397,7 +6280,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an array excluding all values of the provided arrays using
 	     * `SameValueZero` for equality comparisons.
@@ -6422,7 +6305,7 @@
 	        ? baseDifference(array, baseFlatten(values, false, true))
 	        : [];
 	    });
-
+	
 	    /**
 	     * Creates a slice of `array` with `n` elements dropped from the beginning.
 	     *
@@ -6457,7 +6340,7 @@
 	      }
 	      return baseSlice(array, n < 0 ? 0 : n);
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` with `n` elements dropped from the end.
 	     *
@@ -6493,7 +6376,7 @@
 	      n = length - (+n || 0);
 	      return baseSlice(array, 0, n < 0 ? 0 : n);
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` excluding elements dropped from the end.
 	     * Elements are dropped until `predicate` returns falsey. The predicate is
@@ -6548,7 +6431,7 @@
 	        ? baseWhile(array, getCallback(predicate, thisArg, 3), true, true)
 	        : [];
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` excluding elements dropped from the beginning.
 	     * Elements are dropped until `predicate` returns falsey. The predicate is
@@ -6603,7 +6486,7 @@
 	        ? baseWhile(array, getCallback(predicate, thisArg, 3), true)
 	        : [];
 	    }
-
+	
 	    /**
 	     * Fills elements of `array` with `value` from `start` up to, but not
 	     * including, `end`.
@@ -6643,7 +6526,7 @@
 	      }
 	      return baseFill(array, value, start, end);
 	    }
-
+	
 	    /**
 	     * This method is like `_.find` except that it returns the index of the first
 	     * element `predicate` returns truthy for instead of the element itself.
@@ -6693,7 +6576,7 @@
 	     * // => 2
 	     */
 	    var findIndex = createFindIndex();
-
+	
 	    /**
 	     * This method is like `_.findIndex` except that it iterates over elements
 	     * of `collection` from right to left.
@@ -6743,7 +6626,7 @@
 	     * // => 0
 	     */
 	    var findLastIndex = createFindIndex(true);
-
+	
 	    /**
 	     * Gets the first element of `array`.
 	     *
@@ -6764,7 +6647,7 @@
 	    function first(array) {
 	      return array ? array[0] : undefined;
 	    }
-
+	
 	    /**
 	     * Flattens a nested array. If `isDeep` is `true` the array is recursively
 	     * flattened, otherwise it is only flattened a single level.
@@ -6792,7 +6675,7 @@
 	      }
 	      return length ? baseFlatten(array, isDeep) : [];
 	    }
-
+	
 	    /**
 	     * Recursively flattens a nested array.
 	     *
@@ -6810,7 +6693,7 @@
 	      var length = array ? array.length : 0;
 	      return length ? baseFlatten(array, true) : [];
 	    }
-
+	
 	    /**
 	     * Gets the index at which the first occurrence of `value` is found in `array`
 	     * using `SameValueZero` for equality comparisons. If `fromIndex` is negative,
@@ -6852,7 +6735,7 @@
 	      } else if (fromIndex) {
 	        var index = binaryIndex(array, value),
 	            other = array[index];
-
+	
 	        if (value === value ? (value === other) : (other !== other)) {
 	          return index;
 	        }
@@ -6860,7 +6743,7 @@
 	      }
 	      return baseIndexOf(array, value, fromIndex || 0);
 	    }
-
+	
 	    /**
 	     * Gets all but the last element of `array`.
 	     *
@@ -6877,7 +6760,7 @@
 	    function initial(array) {
 	      return dropRight(array, 1);
 	    }
-
+	
 	    /**
 	     * Creates an array of unique values in all provided arrays using `SameValueZero`
 	     * for equality comparisons.
@@ -6903,7 +6786,7 @@
 	          indexOf = getIndexOf(),
 	          isCommon = indexOf == baseIndexOf,
 	          result = [];
-
+	
 	      while (++argsIndex < argsLength) {
 	        var value = arguments[argsIndex];
 	        if (isArray(value) || isArguments(value)) {
@@ -6919,7 +6802,7 @@
 	          index = -1,
 	          length = array ? array.length : 0,
 	          seen = caches[0];
-
+	
 	      outer:
 	      while (++index < length) {
 	        value = array[index];
@@ -6939,7 +6822,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Gets the last element of `array`.
 	     *
@@ -6957,7 +6840,7 @@
 	      var length = array ? array.length : 0;
 	      return length ? array[length - 1] : undefined;
 	    }
-
+	
 	    /**
 	     * This method is like `_.indexOf` except that it iterates over elements of
 	     * `array` from right to left.
@@ -7009,7 +6892,7 @@
 	      }
 	      return -1;
 	    }
-
+	
 	    /**
 	     * Removes all provided values from `array` using `SameValueZero` for equality
 	     * comparisons.
@@ -7037,25 +6920,25 @@
 	    function pull() {
 	      var args = arguments,
 	          array = args[0];
-
+	
 	      if (!(array && array.length)) {
 	        return array;
 	      }
 	      var index = 0,
 	          indexOf = getIndexOf(),
 	          length = args.length;
-
+	
 	      while (++index < length) {
 	        var fromIndex = 0,
 	            value = args[index];
-
+	
 	        while ((fromIndex = indexOf(array, value, fromIndex)) > -1) {
 	          splice.call(array, fromIndex, 1);
 	        }
 	      }
 	      return array;
 	    }
-
+	
 	    /**
 	     * Removes elements from `array` corresponding to the given indexes and returns
 	     * an array of the removed elements. Indexes may be specified as an array of
@@ -7084,12 +6967,12 @@
 	    var pullAt = restParam(function(array, indexes) {
 	      array || (array = []);
 	      indexes = baseFlatten(indexes);
-
+	
 	      var result = baseAt(array, indexes);
 	      basePullAt(array, indexes.sort(baseCompareAscending));
 	      return result;
 	    });
-
+	
 	    /**
 	     * Removes all elements from `array` that `predicate` returns truthy for
 	     * and returns an array of the removed elements. The predicate is bound to
@@ -7137,7 +7020,7 @@
 	      var index = -1,
 	          indexes = [],
 	          length = array.length;
-
+	
 	      predicate = getCallback(predicate, thisArg, 3);
 	      while (++index < length) {
 	        var value = array[index];
@@ -7149,7 +7032,7 @@
 	      basePullAt(array, indexes);
 	      return result;
 	    }
-
+	
 	    /**
 	     * Gets all but the first element of `array`.
 	     *
@@ -7167,7 +7050,7 @@
 	    function rest(array) {
 	      return drop(array, 1);
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` from `start` up to, but not including, `end`.
 	     *
@@ -7193,7 +7076,7 @@
 	      }
 	      return baseSlice(array, start, end);
 	    }
-
+	
 	    /**
 	     * Uses a binary search to determine the lowest index at which `value` should
 	     * be inserted into `array` in order to maintain its sort order. If an iteratee
@@ -7243,7 +7126,7 @@
 	     * // => 1
 	     */
 	    var sortedIndex = createSortedIndex();
-
+	
 	    /**
 	     * This method is like `_.sortedIndex` except that it returns the highest
 	     * index at which `value` should be inserted into `array` in order to
@@ -7265,7 +7148,7 @@
 	     * // => 4
 	     */
 	    var sortedLastIndex = createSortedIndex(true);
-
+	
 	    /**
 	     * Creates a slice of `array` with `n` elements taken from the beginning.
 	     *
@@ -7300,7 +7183,7 @@
 	      }
 	      return baseSlice(array, 0, n < 0 ? 0 : n);
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` with `n` elements taken from the end.
 	     *
@@ -7336,7 +7219,7 @@
 	      n = length - (+n || 0);
 	      return baseSlice(array, n < 0 ? 0 : n);
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` with elements taken from the end. Elements are
 	     * taken until `predicate` returns falsey. The predicate is bound to `thisArg`
@@ -7391,7 +7274,7 @@
 	        ? baseWhile(array, getCallback(predicate, thisArg, 3), false, true)
 	        : [];
 	    }
-
+	
 	    /**
 	     * Creates a slice of `array` with elements taken from the beginning. Elements
 	     * are taken until `predicate` returns falsey. The predicate is bound to
@@ -7446,7 +7329,7 @@
 	        ? baseWhile(array, getCallback(predicate, thisArg, 3))
 	        : [];
 	    }
-
+	
 	    /**
 	     * Creates an array of unique values, in order, of the provided arrays using
 	     * `SameValueZero` for equality comparisons.
@@ -7468,7 +7351,7 @@
 	    var union = restParam(function(arrays) {
 	      return baseUniq(baseFlatten(arrays, false, true));
 	    });
-
+	
 	    /**
 	     * Creates a duplicate-free version of an array, using `SameValueZero` for
 	     * equality comparisons, in which only the first occurence of each element
@@ -7539,7 +7422,7 @@
 	        ? sortedUniq(array, iteratee)
 	        : baseUniq(array, iteratee);
 	    }
-
+	
 	    /**
 	     * This method is like `_.zip` except that it accepts an array of grouped
 	     * elements and creates an array regrouping the elements to their pre-`_.zip`
@@ -7562,13 +7445,13 @@
 	      var index = -1,
 	          length = (array && array.length && arrayMax(arrayMap(array, getLength))) >>> 0,
 	          result = Array(length);
-
+	
 	      while (++index < length) {
 	        result[index] = arrayMap(array, baseProperty(index));
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an array excluding all provided values using `SameValueZero` for
 	     * equality comparisons.
@@ -7593,7 +7476,7 @@
 	        ? baseDifference(array, values)
 	        : [];
 	    });
-
+	
 	    /**
 	     * Creates an array that is the [symmetric difference](https://en.wikipedia.org/wiki/Symmetric_difference)
 	     * of the provided arrays.
@@ -7611,7 +7494,7 @@
 	    function xor() {
 	      var index = -1,
 	          length = arguments.length;
-
+	
 	      while (++index < length) {
 	        var array = arguments[index];
 	        if (isArray(array) || isArguments(array)) {
@@ -7622,7 +7505,7 @@
 	      }
 	      return result ? baseUniq(result) : [];
 	    }
-
+	
 	    /**
 	     * Creates an array of grouped elements, the first of which contains the first
 	     * elements of the given arrays, the second of which contains the second elements
@@ -7639,7 +7522,7 @@
 	     * // => [['fred', 30, true], ['barney', 40, false]]
 	     */
 	    var zip = restParam(unzip);
-
+	
 	    /**
 	     * The inverse of `_.pairs`; this method returns an object composed from arrays
 	     * of property names and values. Provide either a single two dimensional array,
@@ -7665,7 +7548,7 @@
 	      var index = -1,
 	          length = props ? props.length : 0,
 	          result = {};
-
+	
 	      if (length && !values && !isArray(props[0])) {
 	        values = [];
 	      }
@@ -7679,9 +7562,9 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates a `lodash` object that wraps `value` with explicit method
 	     * chaining enabled.
@@ -7713,7 +7596,7 @@
 	      result.__chain__ = true;
 	      return result;
 	    }
-
+	
 	    /**
 	     * This method invokes `interceptor` and returns `value`. The interceptor is
 	     * bound to `thisArg` and invoked with one argument; (value). The purpose of
@@ -7741,7 +7624,7 @@
 	      interceptor.call(thisArg, value);
 	      return value;
 	    }
-
+	
 	    /**
 	     * This method is like `_.tap` except that it returns the result of `interceptor`.
 	     *
@@ -7766,7 +7649,7 @@
 	    function thru(value, interceptor, thisArg) {
 	      return interceptor.call(thisArg, value);
 	    }
-
+	
 	    /**
 	     * Enables explicit method chaining on the wrapper object.
 	     *
@@ -7795,7 +7678,7 @@
 	    function wrapperChain() {
 	      return chain(this);
 	    }
-
+	
 	    /**
 	     * Executes the chained sequence and returns the wrapped result.
 	     *
@@ -7824,7 +7707,7 @@
 	    function wrapperCommit() {
 	      return new LodashWrapper(this.value(), this.__chain__);
 	    }
-
+	
 	    /**
 	     * Creates a clone of the chained sequence planting `value` as the wrapped value.
 	     *
@@ -7851,7 +7734,7 @@
 	    function wrapperPlant(value) {
 	      var result,
 	          parent = this;
-
+	
 	      while (parent instanceof baseLodash) {
 	        var clone = wrapperClone(parent);
 	        if (result) {
@@ -7865,7 +7748,7 @@
 	      previous.__wrapped__ = value;
 	      return result;
 	    }
-
+	
 	    /**
 	     * Reverses the wrapped array so the first element becomes the last, the
 	     * second element becomes the second to last, and so on.
@@ -7898,7 +7781,7 @@
 	        return value.reverse();
 	      });
 	    }
-
+	
 	    /**
 	     * Produces the result of coercing the unwrapped value to a string.
 	     *
@@ -7914,7 +7797,7 @@
 	    function wrapperToString() {
 	      return (this.value() + '');
 	    }
-
+	
 	    /**
 	     * Executes the chained sequence to extract the unwrapped value.
 	     *
@@ -7931,9 +7814,9 @@
 	    function wrapperValue() {
 	      return baseWrapperValue(this.__wrapped__, this.__actions__);
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates an array of elements corresponding to the given keys, or indexes,
 	     * of `collection`. Keys may be specified as individual arguments or as arrays
@@ -7961,7 +7844,7 @@
 	      }
 	      return baseAt(collection, baseFlatten(props));
 	    });
-
+	
 	    /**
 	     * Creates an object composed of keys generated from the results of running
 	     * each element of `collection` through `iteratee`. The corresponding value
@@ -8006,7 +7889,7 @@
 	    var countBy = createAggregator(function(result, value, key) {
 	      hasOwnProperty.call(result, key) ? ++result[key] : (result[key] = 1);
 	    });
-
+	
 	    /**
 	     * Checks if `predicate` returns truthy for **all** elements of `collection`.
 	     * The predicate is bound to `thisArg` and invoked with three arguments:
@@ -8065,7 +7948,7 @@
 	      }
 	      return func(collection, predicate);
 	    }
-
+	
 	    /**
 	     * Iterates over elements of `collection`, returning an array of all elements
 	     * `predicate` returns truthy for. The predicate is bound to `thisArg` and
@@ -8120,7 +8003,7 @@
 	      predicate = getCallback(predicate, thisArg, 3);
 	      return func(collection, predicate);
 	    }
-
+	
 	    /**
 	     * Iterates over elements of `collection`, returning the first element
 	     * `predicate` returns truthy for. The predicate is bound to `thisArg` and
@@ -8172,7 +8055,7 @@
 	     * // => 'barney'
 	     */
 	    var find = createFind(baseEach);
-
+	
 	    /**
 	     * This method is like `_.find` except that it iterates over elements of
 	     * `collection` from right to left.
@@ -8193,7 +8076,7 @@
 	     * // => 3
 	     */
 	    var findLast = createFind(baseEachRight, true);
-
+	
 	    /**
 	     * Performs a deep comparison between each element in `collection` and the
 	     * source object, returning the first element that has equivalent property
@@ -8226,7 +8109,7 @@
 	    function findWhere(collection, source) {
 	      return find(collection, baseMatches(source));
 	    }
-
+	
 	    /**
 	     * Iterates over elements of `collection` invoking `iteratee` for each element.
 	     * The `iteratee` is bound to `thisArg` and invoked with three arguments:
@@ -8258,7 +8141,7 @@
 	     * // => logs each value-key pair and returns the object (iteration order is not guaranteed)
 	     */
 	    var forEach = createForEach(arrayEach, baseEach);
-
+	
 	    /**
 	     * This method is like `_.forEach` except that it iterates over elements of
 	     * `collection` from right to left.
@@ -8279,7 +8162,7 @@
 	     * // => logs each value from right to left and returns the array
 	     */
 	    var forEachRight = createForEach(arrayEachRight, baseEachRight);
-
+	
 	    /**
 	     * Creates an object composed of keys generated from the results of running
 	     * each element of `collection` through `iteratee`. The corresponding value
@@ -8329,7 +8212,7 @@
 	        result[key] = [value];
 	      }
 	    });
-
+	
 	    /**
 	     * Checks if `value` is in `collection` using `SameValueZero` for equality
 	     * comparisons. If `fromIndex` is negative, it is used as the offset from
@@ -8380,7 +8263,7 @@
 	        ? (fromIndex < length && collection.indexOf(target, fromIndex) > -1)
 	        : (getIndexOf(collection, target, fromIndex) > -1);
 	    }
-
+	
 	    /**
 	     * Creates an object composed of keys generated from the results of running
 	     * each element of `collection` through `iteratee`. The corresponding value
@@ -8430,7 +8313,7 @@
 	    var indexBy = createAggregator(function(result, value, key) {
 	      result[key] = value;
 	    });
-
+	
 	    /**
 	     * Invokes the method at `path` on each element in `collection`, returning
 	     * an array of the results of each invoked method. Any additional arguments
@@ -8459,14 +8342,14 @@
 	          isProp = isKey(path),
 	          length = getLength(collection),
 	          result = isLength(length) ? Array(length) : [];
-
+	
 	      baseEach(collection, function(value) {
 	        var func = isFunc ? path : (isProp && value != null && value[path]);
 	        result[++index] = func ? func.apply(value, args) : invokePath(value, path, args);
 	      });
 	      return result;
 	    });
-
+	
 	    /**
 	     * Creates an array of values by running each element in `collection` through
 	     * `iteratee`. The `iteratee` is bound to `thisArg` and invoked with three
@@ -8527,7 +8410,7 @@
 	      iteratee = getCallback(iteratee, thisArg, 3);
 	      return func(collection, iteratee);
 	    }
-
+	
 	    /**
 	     * Creates an array of elements split into two groups, the first of which
 	     * contains elements `predicate` returns truthy for, while the second of which
@@ -8590,7 +8473,7 @@
 	    var partition = createAggregator(function(result, value, key) {
 	      result[key ? 0 : 1].push(value);
 	    }, function() { return [[], []]; });
-
+	
 	    /**
 	     * Gets the property value of `path` from all elements in `collection`.
 	     *
@@ -8617,7 +8500,7 @@
 	    function pluck(collection, path) {
 	      return map(collection, property(path));
 	    }
-
+	
 	    /**
 	     * Reduces `collection` to a value which is the accumulated result of running
 	     * each element in `collection` through `iteratee`, where each successive
@@ -8655,7 +8538,7 @@
 	     * // => { 'a': 3, 'b': 6 } (iteration order is not guaranteed)
 	     */
 	    var reduce = createReduce(arrayReduce, baseEach);
-
+	
 	    /**
 	     * This method is like `_.reduce` except that it iterates over elements of
 	     * `collection` from right to left.
@@ -8679,7 +8562,7 @@
 	     * // => [4, 5, 2, 3, 0, 1]
 	     */
 	    var reduceRight =  createReduce(arrayReduceRight, baseEachRight);
-
+	
 	    /**
 	     * The opposite of `_.filter`; this method returns the elements of `collection`
 	     * that `predicate` does **not** return truthy for.
@@ -8734,7 +8617,7 @@
 	        return !predicate(value, index, collection);
 	      });
 	    }
-
+	
 	    /**
 	     * Gets a random element or `n` random elements from a collection.
 	     *
@@ -8763,7 +8646,7 @@
 	      result.length = nativeMin(n < 0 ? 0 : (+n || 0), result.length);
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an array of shuffled values, using a version of the
 	     * [Fisher-Yates shuffle](https://en.wikipedia.org/wiki/Fisher-Yates_shuffle).
@@ -8780,11 +8663,11 @@
 	     */
 	    function shuffle(collection) {
 	      collection = toIterable(collection);
-
+	
 	      var index = -1,
 	          length = collection.length,
 	          result = Array(length);
-
+	
 	      while (++index < length) {
 	        var rand = baseRandom(0, index);
 	        if (index != rand) {
@@ -8794,7 +8677,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Gets the size of `collection` by returning its length for array-like
 	     * values or the number of own enumerable properties for objects.
@@ -8819,7 +8702,7 @@
 	      var length = collection ? getLength(collection) : 0;
 	      return isLength(length) ? length : keys(collection).length;
 	    }
-
+	
 	    /**
 	     * Checks if `predicate` returns truthy for **any** element of `collection`.
 	     * The function returns as soon as it finds a passing value and does not iterate
@@ -8879,7 +8762,7 @@
 	      }
 	      return func(collection, predicate);
 	    }
-
+	
 	    /**
 	     * Creates an array of elements, sorted in ascending order by the results of
 	     * running each element in a collection through `iteratee`. This method performs
@@ -8937,13 +8820,13 @@
 	      }
 	      var index = -1;
 	      iteratee = getCallback(iteratee, thisArg, 3);
-
+	
 	      var result = baseMap(collection, function(value, key, collection) {
 	        return { 'criteria': iteratee(value, key, collection), 'index': ++index, 'value': value };
 	      });
 	      return baseSortBy(result, compareAscending);
 	    }
-
+	
 	    /**
 	     * This method is like `_.sortBy` except that it can sort by multiple iteratees
 	     * or property names.
@@ -8989,7 +8872,7 @@
 	      }
 	      return baseSortByOrder(collection, baseFlatten(iteratees), []);
 	    });
-
+	
 	    /**
 	     * This method is like `_.sortByAll` except that it allows specifying the
 	     * sort orders of the iteratees to sort by. A truthy value in `orders` will
@@ -9039,7 +8922,7 @@
 	      }
 	      return baseSortByOrder(collection, iteratees, orders);
 	    }
-
+	
 	    /**
 	     * Performs a deep comparison between each element in `collection` and the
 	     * source object, returning an array of all elements that have equivalent
@@ -9072,9 +8955,9 @@
 	    function where(collection, source) {
 	      return filter(collection, baseMatches(source));
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Gets the number of milliseconds that have elapsed since the Unix epoch
 	     * (1 January 1970 00:00:00 UTC).
@@ -9092,9 +8975,9 @@
 	    var now = nativeNow || function() {
 	      return new Date().getTime();
 	    };
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * The opposite of `_.before`; this method creates a function that invokes
 	     * `func` once it is called `n` or more times.
@@ -9135,7 +9018,7 @@
 	        }
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that accepts up to `n` arguments ignoring any
 	     * additional arguments.
@@ -9159,7 +9042,7 @@
 	      n = (func && n == null) ? func.length : nativeMax(+n || 0, 0);
 	      return createWrapper(func, ARY_FLAG, null, null, null, null, n);
 	    }
-
+	
 	    /**
 	     * Creates a function that invokes `func`, with the `this` binding and arguments
 	     * of the created function, while it is called less than `n` times. Subsequent
@@ -9197,7 +9080,7 @@
 	        return result;
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that invokes `func` with the `this` binding of `thisArg`
 	     * and prepends any additional `_.bind` arguments to those provided to the
@@ -9241,7 +9124,7 @@
 	      }
 	      return createWrapper(func, bitmask, thisArg, partials, holders);
 	    });
-
+	
 	    /**
 	     * Binds methods of an object to the object itself, overwriting the existing
 	     * method. Method names may be specified as individual arguments or as arrays
@@ -9272,17 +9155,17 @@
 	     */
 	    var bindAll = restParam(function(object, methodNames) {
 	      methodNames = methodNames.length ? baseFlatten(methodNames) : functions(object);
-
+	
 	      var index = -1,
 	          length = methodNames.length;
-
+	
 	      while (++index < length) {
 	        var key = methodNames[index];
 	        object[key] = createWrapper(object[key], BIND_FLAG, object);
 	      }
 	      return object;
 	    });
-
+	
 	    /**
 	     * Creates a function that invokes the method at `object[key]` and prepends
 	     * any additional `_.bindKey` arguments to those provided to the bound function.
@@ -9335,7 +9218,7 @@
 	      }
 	      return createWrapper(key, bitmask, object, partials, holders);
 	    });
-
+	
 	    /**
 	     * Creates a function that accepts one or more arguments of `func` that when
 	     * called either invokes `func` returning its result, if all `func` arguments
@@ -9377,7 +9260,7 @@
 	     * // => [1, 2, 3]
 	     */
 	    var curry = createCurry(CURRY_FLAG);
-
+	
 	    /**
 	     * This method is like `_.curry` except that arguments are applied to `func`
 	     * in the manner of `_.partialRight` instead of `_.partial`.
@@ -9416,7 +9299,7 @@
 	     * // => [1, 2, 3]
 	     */
 	    var curryRight = createCurry(CURRY_RIGHT_FLAG);
-
+	
 	    /**
 	     * Creates a function that delays invoking `func` until after `wait` milliseconds
 	     * have elapsed since the last time it was invoked. The created function comes
@@ -9490,7 +9373,7 @@
 	          lastCalled = 0,
 	          maxWait = false,
 	          trailing = true;
-
+	
 	      if (typeof func != 'function') {
 	        throw new TypeError(FUNC_ERROR_TEXT);
 	      }
@@ -9503,7 +9386,7 @@
 	        maxWait = 'maxWait' in options && nativeMax(+options.maxWait || 0, wait);
 	        trailing = 'trailing' in options ? options.trailing : trailing;
 	      }
-
+	
 	      function cancel() {
 	        if (timeoutId) {
 	          clearTimeout(timeoutId);
@@ -9513,7 +9396,7 @@
 	        }
 	        maxTimeoutId = timeoutId = trailingCall = undefined;
 	      }
-
+	
 	      function delayed() {
 	        var remaining = wait - (now() - stamp);
 	        if (remaining <= 0 || remaining > wait) {
@@ -9533,7 +9416,7 @@
 	          timeoutId = setTimeout(delayed, remaining);
 	        }
 	      }
-
+	
 	      function maxDelayed() {
 	        if (timeoutId) {
 	          clearTimeout(timeoutId);
@@ -9547,13 +9430,13 @@
 	          }
 	        }
 	      }
-
+	
 	      function debounced() {
 	        args = arguments;
 	        stamp = now();
 	        thisArg = this;
 	        trailingCall = trailing && (timeoutId || !leading);
-
+	
 	        if (maxWait === false) {
 	          var leadingCall = leading && !timeoutId;
 	        } else {
@@ -9562,7 +9445,7 @@
 	          }
 	          var remaining = maxWait - (stamp - lastCalled),
 	              isCalled = remaining <= 0 || remaining > maxWait;
-
+	
 	          if (isCalled) {
 	            if (maxTimeoutId) {
 	              maxTimeoutId = clearTimeout(maxTimeoutId);
@@ -9592,7 +9475,7 @@
 	      debounced.cancel = cancel;
 	      return debounced;
 	    }
-
+	
 	    /**
 	     * Defers invoking the `func` until the current call stack has cleared. Any
 	     * additional arguments are provided to `func` when it is invoked.
@@ -9613,7 +9496,7 @@
 	    var defer = restParam(function(func, args) {
 	      return baseDelay(func, 1, args);
 	    });
-
+	
 	    /**
 	     * Invokes `func` after `wait` milliseconds. Any additional arguments are
 	     * provided to `func` when it is invoked.
@@ -9635,7 +9518,7 @@
 	    var delay = restParam(function(func, wait, args) {
 	      return baseDelay(func, wait, args);
 	    });
-
+	
 	    /**
 	     * Creates a function that returns the result of invoking the provided
 	     * functions with the `this` binding of the created function, where each
@@ -9657,7 +9540,7 @@
 	     * // => 9
 	     */
 	    var flow = createFlow();
-
+	
 	    /**
 	     * This method is like `_.flow` except that it creates a function that
 	     * invokes the provided functions from right to left.
@@ -9679,7 +9562,7 @@
 	     * // => 9
 	     */
 	    var flowRight = createFlow(true);
-
+	
 	    /**
 	     * Creates a function that memoizes the result of `func`. If `resolver` is
 	     * provided it determines the cache key for storing the result based on the
@@ -9739,7 +9622,7 @@
 	        var args = arguments,
 	            cache = memoized.cache,
 	            key = resolver ? resolver.apply(this, args) : args[0];
-
+	
 	        if (cache.has(key)) {
 	          return cache.get(key);
 	        }
@@ -9750,7 +9633,7 @@
 	      memoized.cache = new memoize.Cache;
 	      return memoized;
 	    }
-
+	
 	    /**
 	     * Creates a function that negates the result of the predicate `func`. The
 	     * `func` predicate is invoked with the `this` binding and arguments of the
@@ -9778,7 +9661,7 @@
 	        return !predicate.apply(this, arguments);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that is restricted to invoking `func` once. Repeat calls
 	     * to the function return the value of the first call. The `func` is invoked
@@ -9799,7 +9682,7 @@
 	    function once(func) {
 	      return before(2, func);
 	    }
-
+	
 	    /**
 	     * Creates a function that invokes `func` with `partial` arguments prepended
 	     * to those provided to the new function. This method is like `_.bind` except
@@ -9833,7 +9716,7 @@
 	     * // => 'hi fred'
 	     */
 	    var partial = createPartial(PARTIAL_FLAG);
-
+	
 	    /**
 	     * This method is like `_.partial` except that partially applied arguments
 	     * are appended to those provided to the new function.
@@ -9866,7 +9749,7 @@
 	     * // => 'hello fred'
 	     */
 	    var partialRight = createPartial(PARTIAL_RIGHT_FLAG);
-
+	
 	    /**
 	     * Creates a function that invokes `func` with arguments arranged according
 	     * to the specified indexes where the argument value at the first index is
@@ -9898,7 +9781,7 @@
 	    var rearg = restParam(function(func, indexes) {
 	      return createWrapper(func, REARG_FLAG, null, null, null, baseFlatten(indexes));
 	    });
-
+	
 	    /**
 	     * Creates a function that invokes `func` with the `this` binding of the
 	     * created function and arguments from `start` and beyond provided as an array.
@@ -9931,7 +9814,7 @@
 	            index = -1,
 	            length = nativeMax(args.length - start, 0),
 	            rest = Array(length);
-
+	
 	        while (++index < length) {
 	          rest[index] = args[start + index];
 	        }
@@ -9949,7 +9832,7 @@
 	        return func.apply(this, otherArgs);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that invokes `func` with the `this` binding of the created
 	     * function and an array of arguments much like [`Function#apply`](https://es5.github.io/#x15.3.4.3).
@@ -9989,7 +9872,7 @@
 	        return func.apply(this, array);
 	      };
 	    }
-
+	
 	    /**
 	     * Creates a function that only invokes `func` at most once per every `wait`
 	     * milliseconds. The created function comes with a `cancel` method to cancel
@@ -10032,7 +9915,7 @@
 	    function throttle(func, wait, options) {
 	      var leading = true,
 	          trailing = true;
-
+	
 	      if (typeof func != 'function') {
 	        throw new TypeError(FUNC_ERROR_TEXT);
 	      }
@@ -10047,7 +9930,7 @@
 	      debounceOptions.trailing = trailing;
 	      return debounce(func, wait, debounceOptions);
 	    }
-
+	
 	    /**
 	     * Creates a function that provides `value` to the wrapper function as its
 	     * first argument. Any additional arguments provided to the function are
@@ -10073,9 +9956,9 @@
 	      wrapper = wrapper == null ? identity : wrapper;
 	      return createWrapper(wrapper, PARTIAL_FLAG, null, [value], []);
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Creates a clone of `value`. If `isDeep` is `true` nested objects are cloned,
 	     * otherwise they are assigned by reference. If `customizer` is provided it is
@@ -10139,7 +10022,7 @@
 	      customizer = typeof customizer == 'function' && bindCallback(customizer, thisArg, 1);
 	      return baseClone(value, isDeep, customizer);
 	    }
-
+	
 	    /**
 	     * Creates a deep clone of `value`. If `customizer` is provided it is invoked
 	     * to produce the cloned values. If `customizer` returns `undefined` cloning
@@ -10189,7 +10072,7 @@
 	      customizer = typeof customizer == 'function' && bindCallback(customizer, thisArg, 1);
 	      return baseClone(value, true, customizer);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is classified as an `arguments` object.
 	     *
@@ -10210,7 +10093,7 @@
 	      var length = isObjectLike(value) ? value.length : undefined;
 	      return isLength(length) && objToString.call(value) == argsTag;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is classified as an `Array` object.
 	     *
@@ -10230,7 +10113,7 @@
 	    var isArray = nativeIsArray || function(value) {
 	      return isObjectLike(value) && isLength(value.length) && objToString.call(value) == arrayTag;
 	    };
-
+	
 	    /**
 	     * Checks if `value` is classified as a boolean primitive or object.
 	     *
@@ -10250,7 +10133,7 @@
 	    function isBoolean(value) {
 	      return value === true || value === false || (isObjectLike(value) && objToString.call(value) == boolTag);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is classified as a `Date` object.
 	     *
@@ -10270,7 +10153,7 @@
 	    function isDate(value) {
 	      return isObjectLike(value) && objToString.call(value) == dateTag;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a DOM element.
 	     *
@@ -10297,7 +10180,7 @@
 	        return !!value && value.nodeType === 1 && isObjectLike(value) && !isPlainObject(value);
 	      };
 	    }
-
+	
 	    /**
 	     * Checks if `value` is empty. A value is considered empty unless it is an
 	     * `arguments` object, array, string, or jQuery-like collection with a length
@@ -10336,7 +10219,7 @@
 	      }
 	      return !keys(value).length;
 	    }
-
+	
 	    /**
 	     * Performs a deep comparison between two values to determine if they are
 	     * equivalent. If `customizer` is provided it is invoked to compare values.
@@ -10388,7 +10271,7 @@
 	      var result = customizer ? customizer(value, other) : undefined;
 	      return result === undefined ? baseIsEqual(value, other, customizer) : !!result;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is an `Error`, `EvalError`, `RangeError`, `ReferenceError`,
 	     * `SyntaxError`, `TypeError`, or `URIError` object.
@@ -10409,7 +10292,7 @@
 	    function isError(value) {
 	      return isObjectLike(value) && typeof value.message == 'string' && objToString.call(value) == errorTag;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a finite primitive number.
 	     *
@@ -10440,7 +10323,7 @@
 	    var isFinite = nativeNumIsFinite || function(value) {
 	      return typeof value == 'number' && nativeIsFinite(value);
 	    };
-
+	
 	    /**
 	     * Checks if `value` is classified as a `Function` object.
 	     *
@@ -10463,7 +10346,7 @@
 	      // and Safari 8 equivalents which return 'object' for typed array constructors.
 	      return objToString.call(value) == funcTag;
 	    };
-
+	
 	    /**
 	     * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
 	     * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
@@ -10490,7 +10373,7 @@
 	      var type = typeof value;
 	      return type == 'function' || (!!value && type == 'object');
 	    }
-
+	
 	    /**
 	     * Performs a deep comparison between `object` and `source` to determine if
 	     * `object` contains equivalent property values. If `customizer` is provided
@@ -10533,7 +10416,7 @@
 	    function isMatch(object, source, customizer, thisArg) {
 	      var props = keys(source),
 	          length = props.length;
-
+	
 	      if (!length) {
 	        return true;
 	      }
@@ -10545,21 +10428,21 @@
 	      if (!customizer && length == 1) {
 	        var key = props[0],
 	            value = source[key];
-
+	
 	        if (isStrictComparable(value)) {
 	          return value === object[key] && (value !== undefined || (key in object));
 	        }
 	      }
 	      var values = Array(length),
 	          strictCompareFlags = Array(length);
-
+	
 	      while (length--) {
 	        value = values[length] = source[props[length]];
 	        strictCompareFlags[length] = isStrictComparable(value);
 	      }
 	      return baseIsMatch(object, props, values, strictCompareFlags, customizer);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is `NaN`.
 	     *
@@ -10590,7 +10473,7 @@
 	      // Perform the `toStringTag` check first to avoid errors with some host objects in IE.
 	      return isNumber(value) && value != +value;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a native function.
 	     *
@@ -10616,7 +10499,7 @@
 	      }
 	      return isObjectLike(value) && reIsHostCtor.test(value);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is `null`.
 	     *
@@ -10636,7 +10519,7 @@
 	    function isNull(value) {
 	      return value === null;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is classified as a `Number` primitive or object.
 	     *
@@ -10662,7 +10545,7 @@
 	    function isNumber(value) {
 	      return typeof value == 'number' || (isObjectLike(value) && objToString.call(value) == numberTag);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is a plain object, that is, an object created by the
 	     * `Object` constructor or one with a `[[Prototype]]` of `null`.
@@ -10699,12 +10582,12 @@
 	      }
 	      var valueOf = value.valueOf,
 	          objProto = isNative(valueOf) && (objProto = getPrototypeOf(valueOf)) && getPrototypeOf(objProto);
-
+	
 	      return objProto
 	        ? (value == objProto || getPrototypeOf(value) == objProto)
 	        : shimIsPlainObject(value);
 	    };
-
+	
 	    /**
 	     * Checks if `value` is classified as a `RegExp` object.
 	     *
@@ -10724,7 +10607,7 @@
 	    function isRegExp(value) {
 	      return (isObjectLike(value) && objToString.call(value) == regexpTag) || false;
 	    }
-
+	
 	    /**
 	     * Checks if `value` is classified as a `String` primitive or object.
 	     *
@@ -10744,7 +10627,7 @@
 	    function isString(value) {
 	      return typeof value == 'string' || (isObjectLike(value) && objToString.call(value) == stringTag);
 	    }
-
+	
 	    /**
 	     * Checks if `value` is classified as a typed array.
 	     *
@@ -10764,7 +10647,7 @@
 	    function isTypedArray(value) {
 	      return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[objToString.call(value)];
 	    }
-
+	
 	    /**
 	     * Checks if `value` is `undefined`.
 	     *
@@ -10784,7 +10667,7 @@
 	    function isUndefined(value) {
 	      return value === undefined;
 	    }
-
+	
 	    /**
 	     * Converts `value` to an array.
 	     *
@@ -10810,7 +10693,7 @@
 	      }
 	      return arrayCopy(value);
 	    }
-
+	
 	    /**
 	     * Converts `value` to a plain object flattening inherited enumerable
 	     * properties of `value` to own properties of the plain object.
@@ -10837,9 +10720,9 @@
 	    function toPlainObject(value) {
 	      return baseCopy(value, keysIn(value));
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Assigns own enumerable properties of source object(s) to the destination
 	     * object. Subsequent sources overwrite property assignments of previous sources.
@@ -10878,7 +10761,7 @@
 	        ? assignWith(object, source, customizer)
 	        : baseAssign(object, source);
 	    });
-
+	
 	    /**
 	     * Creates an object that inherits from the given `prototype` object. If a
 	     * `properties` object is provided its own enumerable properties are assigned
@@ -10920,7 +10803,7 @@
 	      }
 	      return properties ? baseAssign(result, properties) : result;
 	    }
-
+	
 	    /**
 	     * Assigns own enumerable properties of source object(s) to the destination
 	     * object for all destination properties that resolve to `undefined`. Once a
@@ -10947,7 +10830,7 @@
 	      args.push(assignDefaults);
 	      return assign.apply(undefined, args);
 	    });
-
+	
 	    /**
 	     * This method is like `_.find` except that it returns the key of the first
 	     * element `predicate` returns truthy for instead of the element itself.
@@ -10997,7 +10880,7 @@
 	     * // => 'barney'
 	     */
 	    var findKey = createFindKey(baseForOwn);
-
+	
 	    /**
 	     * This method is like `_.findKey` except that it iterates over elements of
 	     * a collection in the opposite order.
@@ -11047,7 +10930,7 @@
 	     * // => 'pebbles'
 	     */
 	    var findLastKey = createFindKey(baseForOwnRight);
-
+	
 	    /**
 	     * Iterates over own and inherited enumerable properties of an object invoking
 	     * `iteratee` for each property. The `iteratee` is bound to `thisArg` and invoked
@@ -11076,7 +10959,7 @@
 	     * // => logs 'a', 'b', and 'c' (iteration order is not guaranteed)
 	     */
 	    var forIn = createForIn(baseFor);
-
+	
 	    /**
 	     * This method is like `_.forIn` except that it iterates over properties of
 	     * `object` in the opposite order.
@@ -11103,7 +10986,7 @@
 	     * // => logs 'c', 'b', and 'a' assuming `_.forIn ` logs 'a', 'b', and 'c'
 	     */
 	    var forInRight = createForIn(baseForRight);
-
+	
 	    /**
 	     * Iterates over own enumerable properties of an object invoking `iteratee`
 	     * for each property. The `iteratee` is bound to `thisArg` and invoked with
@@ -11132,7 +11015,7 @@
 	     * // => logs 'a' and 'b' (iteration order is not guaranteed)
 	     */
 	    var forOwn = createForOwn(baseForOwn);
-
+	
 	    /**
 	     * This method is like `_.forOwn` except that it iterates over properties of
 	     * `object` in the opposite order.
@@ -11159,7 +11042,7 @@
 	     * // => logs 'b' and 'a' assuming `_.forOwn` logs 'a' and 'b'
 	     */
 	    var forOwnRight = createForOwn(baseForOwnRight);
-
+	
 	    /**
 	     * Creates an array of function property names from all enumerable properties,
 	     * own and inherited, of `object`.
@@ -11178,7 +11061,7 @@
 	    function functions(object) {
 	      return baseFunctions(object, keysIn(object));
 	    }
-
+	
 	    /**
 	     * Gets the property value of `path` on `object`. If the resolved value is
 	     * `undefined` the `defaultValue` is used in its place.
@@ -11207,7 +11090,7 @@
 	      var result = object == null ? undefined : baseGet(object, toPath(path), path + '');
 	      return result === undefined ? defaultValue : result;
 	    }
-
+	
 	    /**
 	     * Checks if `path` is a direct property.
 	     *
@@ -11243,7 +11126,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an object composed of the inverted keys and values of `object`.
 	     * If `object` contains duplicate values, subsequent values overwrite property
@@ -11275,11 +11158,11 @@
 	          props = keys(object),
 	          length = props.length,
 	          result = {};
-
+	
 	      while (++index < length) {
 	        var key = props[index],
 	            value = object[key];
-
+	
 	        if (multiValue) {
 	          if (hasOwnProperty.call(result, value)) {
 	            result[value].push(key);
@@ -11293,7 +11176,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an array of the own enumerable property names of `object`.
 	     *
@@ -11332,7 +11215,7 @@
 	      }
 	      return isObject(object) ? nativeKeys(object) : [];
 	    };
-
+	
 	    /**
 	     * Creates an array of the own and inherited enumerable property names of `object`.
 	     *
@@ -11365,13 +11248,13 @@
 	      var length = object.length;
 	      length = (length && isLength(length) &&
 	        (isArray(object) || (support.nonEnumArgs && isArguments(object))) && length) || 0;
-
+	
 	      var Ctor = object.constructor,
 	          index = -1,
 	          isProto = typeof Ctor == 'function' && Ctor.prototype === object,
 	          result = Array(length),
 	          skipIndexes = length > 0;
-
+	
 	      while (++index < length) {
 	        result[index] = (index + '');
 	      }
@@ -11383,7 +11266,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an object with the same keys as `object` and values generated by
 	     * running each own enumerable property of `object` through `iteratee`. The
@@ -11428,13 +11311,13 @@
 	    function mapValues(object, iteratee, thisArg) {
 	      var result = {};
 	      iteratee = getCallback(iteratee, thisArg, 3);
-
+	
 	      baseForOwn(object, function(value, key, object) {
 	        result[key] = iteratee(value, key, object);
 	      });
 	      return result;
 	    }
-
+	
 	    /**
 	     * Recursively merges own enumerable properties of the source object(s), that
 	     * don't resolve to `undefined` into the destination object. Subsequent sources
@@ -11484,7 +11367,7 @@
 	     * // => { 'fruits': ['apple', 'banana'], 'vegetables': ['beet', 'carrot'] }
 	     */
 	    var merge = createAssigner(baseMerge);
-
+	
 	    /**
 	     * The opposite of `_.pick`; this method creates an object composed of the
 	     * own and inherited enumerable properties of `object` that are not omitted.
@@ -11526,7 +11409,7 @@
 	        return !predicate(value, key, object);
 	      });
 	    });
-
+	
 	    /**
 	     * Creates a two dimensional array of the key-value pairs for `object`,
 	     * e.g. `[[key1, value1], [key2, value2]]`.
@@ -11546,14 +11429,14 @@
 	          props = keys(object),
 	          length = props.length,
 	          result = Array(length);
-
+	
 	      while (++index < length) {
 	        var key = props[index];
 	        result[index] = [key, object[key]];
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Creates an object composed of the picked `object` properties. Property
 	     * names may be specified as individual arguments or as arrays of property
@@ -11588,7 +11471,7 @@
 	        ? pickByCallback(object, bindCallback(props[0], props[1], 3))
 	        : pickByArray(object, baseFlatten(props));
 	    });
-
+	
 	    /**
 	     * This method is like `_.get` except that if the resolved value is a function
 	     * it is invoked with the `this` binding of its parent object and its result
@@ -11629,7 +11512,7 @@
 	      }
 	      return isFunction(result) ? result.call(object) : result;
 	    }
-
+	
 	    /**
 	     * Sets the property value of `path` on `object`. If a portion of `path`
 	     * does not exist it is created.
@@ -11659,12 +11542,12 @@
 	      }
 	      var pathKey = (path + '');
 	      path = (object[pathKey] != null || isKey(path, object)) ? [pathKey] : toPath(path);
-
+	
 	      var index = -1,
 	          length = path.length,
 	          endIndex = length - 1,
 	          nested = object;
-
+	
 	      while (nested != null && ++index < length) {
 	        var key = path[index];
 	        if (isObject(nested)) {
@@ -11678,7 +11561,7 @@
 	      }
 	      return object;
 	    }
-
+	
 	    /**
 	     * An alternative to `_.reduce`; this method transforms `object` to a new
 	     * `accumulator` object which is the result of running each of its own enumerable
@@ -11711,7 +11594,7 @@
 	    function transform(object, iteratee, accumulator, thisArg) {
 	      var isArr = isArray(object) || isTypedArray(object);
 	      iteratee = getCallback(iteratee, thisArg, 4);
-
+	
 	      if (accumulator == null) {
 	        if (isArr || isObject(object)) {
 	          var Ctor = object.constructor;
@@ -11729,7 +11612,7 @@
 	      });
 	      return accumulator;
 	    }
-
+	
 	    /**
 	     * Creates an array of the own enumerable property values of `object`.
 	     *
@@ -11758,7 +11641,7 @@
 	    function values(object) {
 	      return baseValues(object, keys(object));
 	    }
-
+	
 	    /**
 	     * Creates an array of the own and inherited enumerable property values
 	     * of `object`.
@@ -11785,9 +11668,9 @@
 	    function valuesIn(object) {
 	      return baseValues(object, keysIn(object));
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Checks if `n` is between `start` and up to but not including, `end`. If
 	     * `end` is not specified it is set to `start` with `start` then set to `0`.
@@ -11829,7 +11712,7 @@
 	      }
 	      return value >= nativeMin(start, end) && value < nativeMax(start, end);
 	    }
-
+	
 	    /**
 	     * Produces a random number between `min` and `max` (inclusive). If only one
 	     * argument is provided a number between `0` and the given number is returned.
@@ -11863,7 +11746,7 @@
 	      }
 	      var noMin = min == null,
 	          noMax = max == null;
-
+	
 	      if (floating == null) {
 	        if (noMax && typeof min == 'boolean') {
 	          floating = min;
@@ -11891,9 +11774,9 @@
 	      }
 	      return baseRandom(min, max);
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Converts `string` to [camel case](https://en.wikipedia.org/wiki/CamelCase).
 	     *
@@ -11917,7 +11800,7 @@
 	      word = word.toLowerCase();
 	      return result + (index ? (word.charAt(0).toUpperCase() + word.slice(1)) : word);
 	    });
-
+	
 	    /**
 	     * Capitalizes the first character of `string`.
 	     *
@@ -11935,7 +11818,7 @@
 	      string = baseToString(string);
 	      return string && (string.charAt(0).toUpperCase() + string.slice(1));
 	    }
-
+	
 	    /**
 	     * Deburrs `string` by converting [latin-1 supplementary letters](https://en.wikipedia.org/wiki/Latin-1_Supplement_(Unicode_block)#Character_table)
 	     * to basic latin letters and removing [combining diacritical marks](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks).
@@ -11954,7 +11837,7 @@
 	      string = baseToString(string);
 	      return string && string.replace(reLatin1, deburrLetter).replace(reComboMark, '');
 	    }
-
+	
 	    /**
 	     * Checks if `string` ends with the given target string.
 	     *
@@ -11979,16 +11862,16 @@
 	    function endsWith(string, target, position) {
 	      string = baseToString(string);
 	      target = (target + '');
-
+	
 	      var length = string.length;
 	      position = position === undefined
 	        ? length
 	        : nativeMin(position < 0 ? 0 : (+position || 0), length);
-
+	
 	      position -= target.length;
 	      return position >= 0 && string.indexOf(target, position) == position;
 	    }
-
+	
 	    /**
 	     * Converts the characters "&", "<", ">", '"', "'", and "\`", in `string` to
 	     * their corresponding HTML entities.
@@ -12028,7 +11911,7 @@
 	        ? string.replace(reUnescapedHtml, escapeHtmlChar)
 	        : string;
 	    }
-
+	
 	    /**
 	     * Escapes the `RegExp` special characters "\", "/", "^", "$", ".", "|", "?",
 	     * "*", "+", "(", ")", "[", "]", "{" and "}" in `string`.
@@ -12049,7 +11932,7 @@
 	        ? string.replace(reRegExpChars, '\\$&')
 	        : string;
 	    }
-
+	
 	    /**
 	     * Converts `string` to [kebab case](https://en.wikipedia.org/wiki/Letter_case#Special_case_styles).
 	     *
@@ -12072,7 +11955,7 @@
 	    var kebabCase = createCompounder(function(result, word, index) {
 	      return result + (index ? '-' : '') + word.toLowerCase();
 	    });
-
+	
 	    /**
 	     * Pads `string` on the left and right sides if it is shorter than `length`.
 	     * Padding characters are truncated if they can't be evenly divided by `length`.
@@ -12098,7 +11981,7 @@
 	    function pad(string, length, chars) {
 	      string = baseToString(string);
 	      length = +length;
-
+	
 	      var strLength = string.length;
 	      if (strLength >= length || !nativeIsFinite(length)) {
 	        return string;
@@ -12106,11 +11989,11 @@
 	      var mid = (length - strLength) / 2,
 	          leftLength = floor(mid),
 	          rightLength = ceil(mid);
-
+	
 	      chars = createPadding('', rightLength, chars);
 	      return chars.slice(0, leftLength) + string + chars;
 	    }
-
+	
 	    /**
 	     * Pads `string` on the left side if it is shorter than `length`. Padding
 	     * characters are truncated if they exceed `length`.
@@ -12134,7 +12017,7 @@
 	     * // => 'abc'
 	     */
 	    var padLeft = createPadDir();
-
+	
 	    /**
 	     * Pads `string` on the right side if it is shorter than `length`. Padding
 	     * characters are truncated if they exceed `length`.
@@ -12158,7 +12041,7 @@
 	     * // => 'abc'
 	     */
 	    var padRight = createPadDir(true);
-
+	
 	    /**
 	     * Converts `string` to an integer of the specified radix. If `radix` is
 	     * `undefined` or `0`, a `radix` of `10` is used unless `value` is a hexadecimal,
@@ -12203,7 +12086,7 @@
 	        return nativeParseInt(string, radix || (reHasHexPrefix.test(string) ? 16 : 10));
 	      };
 	    }
-
+	
 	    /**
 	     * Repeats the given string `n` times.
 	     *
@@ -12240,10 +12123,10 @@
 	        n = floor(n / 2);
 	        string += string;
 	      } while (n);
-
+	
 	      return result;
 	    }
-
+	
 	    /**
 	     * Converts `string` to [snake case](https://en.wikipedia.org/wiki/Snake_case).
 	     *
@@ -12266,7 +12149,7 @@
 	    var snakeCase = createCompounder(function(result, word, index) {
 	      return result + (index ? '_' : '') + word.toLowerCase();
 	    });
-
+	
 	    /**
 	     * Converts `string` to [start case](https://en.wikipedia.org/wiki/Letter_case#Stylistic_or_specialised_usage).
 	     *
@@ -12289,7 +12172,7 @@
 	    var startCase = createCompounder(function(result, word, index) {
 	      return result + (index ? ' ' : '') + (word.charAt(0).toUpperCase() + word.slice(1));
 	    });
-
+	
 	    /**
 	     * Checks if `string` starts with the given target string.
 	     *
@@ -12316,10 +12199,10 @@
 	      position = position == null
 	        ? 0
 	        : nativeMin(position < 0 ? 0 : (+position || 0), string.length);
-
+	
 	      return string.lastIndexOf(target, position) == position;
 	    }
-
+	
 	    /**
 	     * Creates a compiled template function that can interpolate data properties
 	     * in "interpolate" delimiters, HTML-escape interpolated data properties in
@@ -12420,23 +12303,23 @@
 	      // Based on John Resig's `tmpl` implementation (http://ejohn.org/blog/javascript-micro-templating/)
 	      // and Laura Doktorova's doT.js (https://github.com/olado/doT).
 	      var settings = lodash.templateSettings;
-
+	
 	      if (otherOptions && isIterateeCall(string, options, otherOptions)) {
 	        options = otherOptions = null;
 	      }
 	      string = baseToString(string);
 	      options = assignWith(baseAssign({}, otherOptions || options), settings, assignOwnDefaults);
-
+	
 	      var imports = assignWith(baseAssign({}, options.imports), settings.imports, assignOwnDefaults),
 	          importsKeys = keys(imports),
 	          importsValues = baseValues(imports, importsKeys);
-
+	
 	      var isEscaping,
 	          isEvaluating,
 	          index = 0,
 	          interpolate = options.interpolate || reNoMatch,
 	          source = "__p += '";
-
+	
 	      // Compile the regexp to match each delimiter.
 	      var reDelimiters = RegExp(
 	        (options.escape || reNoMatch).source + '|' +
@@ -12444,20 +12327,20 @@
 	        (interpolate === reInterpolate ? reEsTemplate : reNoMatch).source + '|' +
 	        (options.evaluate || reNoMatch).source + '|$'
 	      , 'g');
-
+	
 	      // Use a sourceURL for easier debugging.
 	      var sourceURL = '//# sourceURL=' +
 	        ('sourceURL' in options
 	          ? options.sourceURL
 	          : ('lodash.templateSources[' + (++templateCounter) + ']')
 	        ) + '\n';
-
+	
 	      string.replace(reDelimiters, function(match, escapeValue, interpolateValue, esTemplateValue, evaluateValue, offset) {
 	        interpolateValue || (interpolateValue = esTemplateValue);
-
+	
 	        // Escape characters that can't be included in string literals.
 	        source += string.slice(index, offset).replace(reUnescapedString, escapeStringChar);
-
+	
 	        // Replace delimiters with snippets.
 	        if (escapeValue) {
 	          isEscaping = true;
@@ -12471,14 +12354,14 @@
 	          source += "' +\n((__t = (" + interpolateValue + ")) == null ? '' : __t) +\n'";
 	        }
 	        index = offset + match.length;
-
+	
 	        // The JS engine embedded in Adobe products requires returning the `match`
 	        // string in order to produce the correct `offset` value.
 	        return match;
 	      });
-
+	
 	      source += "';\n";
-
+	
 	      // If `variable` is not specified wrap a with-statement around the generated
 	      // code to add the data object to the top of the scope chain.
 	      var variable = options.variable;
@@ -12489,7 +12372,7 @@
 	      source = (isEvaluating ? source.replace(reEmptyStringLeading, '') : source)
 	        .replace(reEmptyStringMiddle, '$1')
 	        .replace(reEmptyStringTrailing, '$1;');
-
+	
 	      // Frame code as the function body.
 	      source = 'function(' + (variable || 'obj') + ') {\n' +
 	        (variable
@@ -12508,11 +12391,11 @@
 	        ) +
 	        source +
 	        'return __p\n}';
-
+	
 	      var result = attempt(function() {
 	        return Function(importsKeys, sourceURL + 'return ' + source).apply(undefined, importsValues);
 	      });
-
+	
 	      // Provide the compiled function's source by its `toString` method or
 	      // the `source` property as a convenience for inlining compiled templates.
 	      result.source = source;
@@ -12521,7 +12404,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Removes leading and trailing whitespace or specified characters from `string`.
 	     *
@@ -12555,7 +12438,7 @@
 	      chars = (chars + '');
 	      return string.slice(charsLeftIndex(string, chars), charsRightIndex(string, chars) + 1);
 	    }
-
+	
 	    /**
 	     * Removes leading whitespace or specified characters from `string`.
 	     *
@@ -12585,7 +12468,7 @@
 	      }
 	      return string.slice(charsLeftIndex(string, (chars + '')));
 	    }
-
+	
 	    /**
 	     * Removes trailing whitespace or specified characters from `string`.
 	     *
@@ -12615,7 +12498,7 @@
 	      }
 	      return string.slice(0, charsRightIndex(string, (chars + '')) + 1);
 	    }
-
+	
 	    /**
 	     * Truncates `string` if it is longer than the given maximum string length.
 	     * The last characters of the truncated string are replaced with the omission
@@ -12662,7 +12545,7 @@
 	      }
 	      var length = DEFAULT_TRUNC_LENGTH,
 	          omission = DEFAULT_TRUNC_OMISSION;
-
+	
 	      if (options != null) {
 	        if (isObject(options)) {
 	          var separator = 'separator' in options ? options.separator : separator;
@@ -12689,7 +12572,7 @@
 	          var match,
 	              newEnd,
 	              substring = string.slice(0, end);
-
+	
 	          if (!separator.global) {
 	            separator = RegExp(separator.source, (reFlags.exec(separator) || '') + 'g');
 	          }
@@ -12707,7 +12590,7 @@
 	      }
 	      return result + omission;
 	    }
-
+	
 	    /**
 	     * The inverse of `_.escape`; this method converts the HTML entities
 	     * `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`, and `&#96;` in `string` to their
@@ -12732,7 +12615,7 @@
 	        ? string.replace(reEscapedHtml, unescapeHtmlChar)
 	        : string;
 	    }
-
+	
 	    /**
 	     * Splits `string` into an array of its words.
 	     *
@@ -12758,9 +12641,9 @@
 	      string = baseToString(string);
 	      return string.match(pattern || reWords) || [];
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Attempts to invoke `func`, returning either the result or the caught error
 	     * object. Any additional arguments are provided to `func` when it is invoked.
@@ -12788,7 +12671,7 @@
 	        return isError(e) ? e : new Error(e);
 	      }
 	    });
-
+	
 	    /**
 	     * Creates a function that invokes `func` with the `this` binding of `thisArg`
 	     * and arguments of the created function. If `func` is a property name the
@@ -12833,7 +12716,7 @@
 	      }
 	      return baseCallback(func, thisArg);
 	    }
-
+	
 	    /**
 	     * Creates a function that returns `value`.
 	     *
@@ -12855,7 +12738,7 @@
 	        return value;
 	      };
 	    }
-
+	
 	    /**
 	     * This method returns the first argument provided to it.
 	     *
@@ -12874,7 +12757,7 @@
 	    function identity(value) {
 	      return value;
 	    }
-
+	
 	    /**
 	     * Creates a function which performs a deep comparison between a given object
 	     * and `source`, returning `true` if the given object has equivalent property
@@ -12903,7 +12786,7 @@
 	    function matches(source) {
 	      return baseMatches(baseClone(source, true));
 	    }
-
+	
 	    /**
 	     * Creates a function which compares the property value of `path` on a given
 	     * object to `value`.
@@ -12931,7 +12814,7 @@
 	    function matchesProperty(path, value) {
 	      return baseMatchesProperty(path, baseClone(value, true));
 	    }
-
+	
 	    /**
 	     * Creates a function which invokes the method at `path` on a given object.
 	     *
@@ -12958,7 +12841,7 @@
 	        return invokePath(object, path, args);
 	      }
 	    });
-
+	
 	    /**
 	     * The opposite of `_.method`; this method creates a function which invokes
 	     * the method at a given path on `object`.
@@ -12984,7 +12867,7 @@
 	        return invokePath(object, path, args);
 	      };
 	    });
-
+	
 	    /**
 	     * Adds all own enumerable function properties of a source object to the
 	     * destination object. If `object` is a function then methods are added to
@@ -13029,7 +12912,7 @@
 	        var isObj = isObject(source),
 	            props = isObj && keys(source),
 	            methodNames = props && props.length && baseFunctions(source, props);
-
+	
 	        if (!(methodNames ? methodNames.length : isObj)) {
 	          methodNames = false;
 	          options = source;
@@ -13044,7 +12927,7 @@
 	          index = -1,
 	          isFunc = isFunction(object),
 	          length = methodNames.length;
-
+	
 	      if (options === false) {
 	        chain = false;
 	      } else if (isObject(options) && 'chain' in options) {
@@ -13053,7 +12936,7 @@
 	      while (++index < length) {
 	        var methodName = methodNames[index],
 	            func = source[methodName];
-
+	
 	        object[methodName] = func;
 	        if (isFunc) {
 	          object.prototype[methodName] = (function(func) {
@@ -13062,7 +12945,7 @@
 	              if (chain || chainAll) {
 	                var result = object(this.__wrapped__),
 	                    actions = result.__actions__ = arrayCopy(this.__actions__);
-
+	
 	                actions.push({ 'func': func, 'args': arguments, 'thisArg': object });
 	                result.__chain__ = chainAll;
 	                return result;
@@ -13076,7 +12959,7 @@
 	      }
 	      return object;
 	    }
-
+	
 	    /**
 	     * Reverts the `_` variable to its previous value and returns a reference to
 	     * the `lodash` function.
@@ -13093,7 +12976,7 @@
 	      context._ = oldDash;
 	      return this;
 	    }
-
+	
 	    /**
 	     * A no-operation function which returns `undefined` regardless of the
 	     * arguments it receives.
@@ -13111,7 +12994,7 @@
 	    function noop() {
 	      // No operation performed.
 	    }
-
+	
 	    /**
 	     * Creates a function which returns the property value at `path` on a
 	     * given object.
@@ -13137,7 +13020,7 @@
 	    function property(path) {
 	      return isKey(path) ? baseProperty(path) : basePropertyDeep(path);
 	    }
-
+	
 	    /**
 	     * The opposite of `_.property`; this method creates a function which returns
 	     * the property value at a given path on `object`.
@@ -13163,7 +13046,7 @@
 	        return baseGet(object, toPath(path), path + '');
 	      };
 	    }
-
+	
 	    /**
 	     * Creates an array of numbers (positive and/or negative) progressing from
 	     * `start` up to, but not including, `end`. If `end` is not specified it is
@@ -13203,7 +13086,7 @@
 	      }
 	      start = +start || 0;
 	      step = step == null ? 1 : (+step || 0);
-
+	
 	      if (end == null) {
 	        end = start;
 	        start = 0;
@@ -13215,14 +13098,14 @@
 	      var index = -1,
 	          length = nativeMax(ceil((end - start) / (step || 1)), 0),
 	          result = Array(length);
-
+	
 	      while (++index < length) {
 	        result[index] = start;
 	        start += step;
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Invokes the iteratee function `n` times, returning an array of the results
 	     * of each invocation. The `iteratee` is bound to `thisArg` and invoked with
@@ -13252,7 +13135,7 @@
 	     */
 	    function times(n, iteratee, thisArg) {
 	      n = floor(n);
-
+	
 	      // Exit early to avoid a JSC JIT bug in Safari 8
 	      // where `Array(0)` is treated as `Array(1)`.
 	      if (n < 1 || !nativeIsFinite(n)) {
@@ -13260,7 +13143,7 @@
 	      }
 	      var index = -1,
 	          result = Array(nativeMin(n, MAX_ARRAY_LENGTH));
-
+	
 	      iteratee = bindCallback(iteratee, thisArg, 1);
 	      while (++index < n) {
 	        if (index < MAX_ARRAY_LENGTH) {
@@ -13271,7 +13154,7 @@
 	      }
 	      return result;
 	    }
-
+	
 	    /**
 	     * Generates a unique ID. If `prefix` is provided the ID is appended to it.
 	     *
@@ -13292,9 +13175,9 @@
 	      var id = ++idCounter;
 	      return baseToString(prefix) + id;
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * Adds two numbers.
 	     *
@@ -13312,7 +13195,7 @@
 	    function add(augend, addend) {
 	      return (+augend || 0) + (+addend || 0);
 	    }
-
+	
 	    /**
 	     * Gets the maximum value of `collection`. If `collection` is empty or falsey
 	     * `-Infinity` is returned. If an iteratee function is provided it is invoked
@@ -13361,7 +13244,7 @@
 	     * // => { 'user': 'fred', 'age': 40 }
 	     */
 	    var max = createExtremum(arrayMax);
-
+	
 	    /**
 	     * Gets the minimum value of `collection`. If `collection` is empty or falsey
 	     * `Infinity` is returned. If an iteratee function is provided it is invoked
@@ -13410,7 +13293,7 @@
 	     * // => { 'user': 'barney', 'age': 36 }
 	     */
 	    var min = createExtremum(arrayMin, true);
-
+	
 	    /**
 	     * Gets the sum of the values in `collection`.
 	     *
@@ -13449,7 +13332,7 @@
 	      }
 	      var func = getCallback(),
 	          noIteratee = iteratee == null;
-
+	
 	      if (!(func === baseCallback && noIteratee)) {
 	        noIteratee = false;
 	        iteratee = func(iteratee, thisArg, 3);
@@ -13458,30 +13341,30 @@
 	        ? arraySum(isArray(collection) ? collection : toIterable(collection))
 	        : baseSum(collection, iteratee);
 	    }
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    // Ensure wrappers are instances of `baseLodash`.
 	    lodash.prototype = baseLodash.prototype;
-
+	
 	    LodashWrapper.prototype = baseCreate(baseLodash.prototype);
 	    LodashWrapper.prototype.constructor = LodashWrapper;
-
+	
 	    LazyWrapper.prototype = baseCreate(baseLodash.prototype);
 	    LazyWrapper.prototype.constructor = LazyWrapper;
-
+	
 	    // Add functions to the `Map` cache.
 	    MapCache.prototype['delete'] = mapDelete;
 	    MapCache.prototype.get = mapGet;
 	    MapCache.prototype.has = mapHas;
 	    MapCache.prototype.set = mapSet;
-
+	
 	    // Add functions to the `Set` cache.
 	    SetCache.prototype.push = cachePush;
-
+	
 	    // Assign cache to `_.memoize`.
 	    memoize.Cache = MapCache;
-
+	
 	    // Add functions that return wrapped values when chaining.
 	    lodash.after = after;
 	    lodash.ary = ary;
@@ -13587,7 +13470,7 @@
 	    lodash.xor = xor;
 	    lodash.zip = zip;
 	    lodash.zipObject = zipObject;
-
+	
 	    // Add aliases.
 	    lodash.backflow = flowRight;
 	    lodash.collect = map;
@@ -13601,12 +13484,12 @@
 	    lodash.select = filter;
 	    lodash.tail = rest;
 	    lodash.unique = uniq;
-
+	
 	    // Add functions to `lodash.prototype`.
 	    mixin(lodash, lodash);
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    // Add functions that return unwrapped values when chaining.
 	    lodash.add = add;
 	    lodash.attempt = attempt;
@@ -13688,7 +13571,7 @@
 	    lodash.unescape = unescape;
 	    lodash.uniqueId = uniqueId;
 	    lodash.words = words;
-
+	
 	    // Add aliases.
 	    lodash.all = every;
 	    lodash.any = some;
@@ -13699,7 +13582,7 @@
 	    lodash.head = first;
 	    lodash.include = includes;
 	    lodash.inject = reduce;
-
+	
 	    mixin(lodash, (function() {
 	      var source = {};
 	      baseForOwn(lodash, function(func, methodName) {
@@ -13709,12 +13592,12 @@
 	      });
 	      return source;
 	    }()), false);
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    // Add functions capable of returning wrapped and unwrapped values when chaining.
 	    lodash.sample = sample;
-
+	
 	    lodash.prototype.sample = function(n) {
 	      if (!this.__chain__ && n == null) {
 	        return sample(this.value());
@@ -13723,9 +13606,9 @@
 	        return sample(value, n);
 	      });
 	    };
-
+	
 	    /*------------------------------------------------------------------------*/
-
+	
 	    /**
 	     * The semantic version number.
 	     *
@@ -13734,22 +13617,22 @@
 	     * @type string
 	     */
 	    lodash.VERSION = VERSION;
-
+	
 	    // Assign default placeholders.
 	    arrayEach(['bind', 'bindKey', 'curry', 'curryRight', 'partial', 'partialRight'], function(methodName) {
 	      lodash[methodName].placeholder = lodash;
 	    });
-
+	
 	    // Add `LazyWrapper` methods that accept an `iteratee` value.
 	    arrayEach(['dropWhile', 'filter', 'map', 'takeWhile'], function(methodName, type) {
 	      var isFilter = type != LAZY_MAP_FLAG,
 	          isDropWhile = type == LAZY_DROP_WHILE_FLAG;
-
+	
 	      LazyWrapper.prototype[methodName] = function(iteratee, thisArg) {
 	        var filtered = this.__filtered__,
 	            result = (filtered && isDropWhile) ? new LazyWrapper(this) : this.clone(),
 	            iteratees = result.__iteratees__ || (result.__iteratees__ = []);
-
+	
 	        iteratees.push({
 	          'done': false,
 	          'count': 0,
@@ -13758,20 +13641,20 @@
 	          'limit': -1,
 	          'type': type
 	        });
-
+	
 	        result.__filtered__ = filtered || isFilter;
 	        return result;
 	      };
 	    });
-
+	
 	    // Add `LazyWrapper` methods for `_.drop` and `_.take` variants.
 	    arrayEach(['drop', 'take'], function(methodName, index) {
 	      var whileName = methodName + 'While';
-
+	
 	      LazyWrapper.prototype[methodName] = function(n) {
 	        var filtered = this.__filtered__,
 	            result = (filtered && !index) ? this.dropWhile() : this.clone();
-
+	
 	        n = n == null ? 1 : nativeMax(floor(n) || 0, 0);
 	        if (filtered) {
 	          if (index) {
@@ -13785,70 +13668,70 @@
 	        }
 	        return result;
 	      };
-
+	
 	      LazyWrapper.prototype[methodName + 'Right'] = function(n) {
 	        return this.reverse()[methodName](n).reverse();
 	      };
-
+	
 	      LazyWrapper.prototype[methodName + 'RightWhile'] = function(predicate, thisArg) {
 	        return this.reverse()[whileName](predicate, thisArg).reverse();
 	      };
 	    });
-
+	
 	    // Add `LazyWrapper` methods for `_.first` and `_.last`.
 	    arrayEach(['first', 'last'], function(methodName, index) {
 	      var takeName = 'take' + (index ? 'Right' : '');
-
+	
 	      LazyWrapper.prototype[methodName] = function() {
 	        return this[takeName](1).value()[0];
 	      };
 	    });
-
+	
 	    // Add `LazyWrapper` methods for `_.initial` and `_.rest`.
 	    arrayEach(['initial', 'rest'], function(methodName, index) {
 	      var dropName = 'drop' + (index ? '' : 'Right');
-
+	
 	      LazyWrapper.prototype[methodName] = function() {
 	        return this[dropName](1);
 	      };
 	    });
-
+	
 	    // Add `LazyWrapper` methods for `_.pluck` and `_.where`.
 	    arrayEach(['pluck', 'where'], function(methodName, index) {
 	      var operationName = index ? 'filter' : 'map',
 	          createCallback = index ? baseMatches : property;
-
+	
 	      LazyWrapper.prototype[methodName] = function(value) {
 	        return this[operationName](createCallback(value));
 	      };
 	    });
-
+	
 	    LazyWrapper.prototype.compact = function() {
 	      return this.filter(identity);
 	    };
-
+	
 	    LazyWrapper.prototype.reject = function(predicate, thisArg) {
 	      predicate = getCallback(predicate, thisArg, 1);
 	      return this.filter(function(value) {
 	        return !predicate(value);
 	      });
 	    };
-
+	
 	    LazyWrapper.prototype.slice = function(start, end) {
 	      start = start == null ? 0 : (+start || 0);
 	      var result = start < 0 ? this.takeRight(-start) : this.drop(start);
-
+	
 	      if (end !== undefined) {
 	        end = (+end || 0);
 	        result = end < 0 ? result.dropRight(-end) : result.take(end - start);
 	      }
 	      return result;
 	    };
-
+	
 	    LazyWrapper.prototype.toArray = function() {
 	      return this.drop(0);
 	    };
-
+	
 	    // Add `LazyWrapper` methods to `lodash.prototype`.
 	    baseForOwn(LazyWrapper.prototype, function(func, methodName) {
 	      var lodashFunc = lodash[methodName];
@@ -13857,7 +13740,7 @@
 	      }
 	      var checkIteratee = /^(?:filter|map|reject)|While$/.test(methodName),
 	          retUnwrapped = /^(?:first|last)$/.test(methodName);
-
+	
 	      lodash.prototype[methodName] = function() {
 	        var args = arguments,
 	            length = args.length,
@@ -13867,7 +13750,7 @@
 	            isLazy = value instanceof LazyWrapper,
 	            iteratee = args[0],
 	            useLazy = isLazy || isArray(value);
-
+	
 	        if (useLazy && checkIteratee && typeof iteratee == 'function' && iteratee.length != 1) {
 	          // avoid lazy use if the iteratee has a "length" value other than `1`
 	          isLazy = useLazy = false;
@@ -13886,7 +13769,7 @@
 	        if (useLazy) {
 	          var wrapper = onlyLazy ? value : new LazyWrapper(this),
 	              result = func.apply(wrapper, args);
-
+	
 	          if (!retUnwrapped && (isHybrid || result.__actions__)) {
 	            var actions = result.__actions__ || (result.__actions__ = []);
 	            actions.push({ 'func': thru, 'args': [interceptor], 'thisArg': lodash });
@@ -13896,13 +13779,13 @@
 	        return this.thru(interceptor);
 	      };
 	    });
-
+	
 	    // Add `Array` and `String` methods to `lodash.prototype`.
 	    arrayEach(['concat', 'join', 'pop', 'push', 'replace', 'shift', 'sort', 'splice', 'split', 'unshift'], function(methodName) {
 	      var func = (/^(?:replace|split)$/.test(methodName) ? stringProto : arrayProto)[methodName],
 	          chainName = /^(?:push|sort|unshift)$/.test(methodName) ? 'tap' : 'thru',
 	          retUnwrapped = /^(?:join|pop|replace|shift)$/.test(methodName);
-
+	
 	      lodash.prototype[methodName] = function() {
 	        var args = arguments;
 	        if (retUnwrapped && !this.__chain__) {
@@ -13913,25 +13796,25 @@
 	        });
 	      };
 	    });
-
+	
 	    // Map minified function names to their real names.
 	    baseForOwn(LazyWrapper.prototype, function(func, methodName) {
 	      var lodashFunc = lodash[methodName];
 	      if (lodashFunc) {
 	        var key = lodashFunc.name,
 	            names = realNames[key] || (realNames[key] = []);
-
+	
 	        names.push({ 'name': methodName, 'func': lodashFunc });
 	      }
 	    });
-
+	
 	    realNames[createHybridWrapper(null, BIND_KEY_FLAG).name] = [{ 'name': 'wrapper', 'func': null }];
-
+	
 	    // Add functions to the lazy wrapper.
 	    LazyWrapper.prototype.clone = lazyClone;
 	    LazyWrapper.prototype.reverse = lazyReverse;
 	    LazyWrapper.prototype.value = lazyValue;
-
+	
 	    // Add chaining functions to the `lodash` wrapper.
 	    lodash.prototype.chain = wrapperChain;
 	    lodash.prototype.commit = wrapperCommit;
@@ -13939,21 +13822,21 @@
 	    lodash.prototype.reverse = wrapperReverse;
 	    lodash.prototype.toString = wrapperToString;
 	    lodash.prototype.run = lodash.prototype.toJSON = lodash.prototype.valueOf = lodash.prototype.value = wrapperValue;
-
+	
 	    // Add function aliases to the `lodash` wrapper.
 	    lodash.prototype.collect = lodash.prototype.map;
 	    lodash.prototype.head = lodash.prototype.first;
 	    lodash.prototype.select = lodash.prototype.filter;
 	    lodash.prototype.tail = lodash.prototype.rest;
-
+	
 	    return lodash;
 	  }
-
+	
 	  /*--------------------------------------------------------------------------*/
-
+	
 	  // Export lodash.
 	  var _ = runInContext();
-
+	
 	  // Some AMD build optimizers like r.js check for condition patterns like the following:
 	  if (true) {
 	    // Expose lodash to the global object when an AMD loader is present to avoid
@@ -13961,7 +13844,7 @@
 	    // as an AMD module. See http://requirejs.org/docs/errors.html#mismatch for
 	    // more details.
 	    root._ = _;
-
+	
 	    // Define as an anonymous module so, through path mapping, it can be
 	    // referenced as the "underscore" module.
 	    !(__WEBPACK_AMD_DEFINE_RESULT__ = function() {
@@ -13984,9 +13867,204 @@
 	    root._ = _;
 	  }
 	}.call(this));
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)(module), (function() { return this; }())))
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(47)(module), (function() { return this; }())))
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(clearImmediate, process) {(function (global, undefined) {
+	    "use strict";
+	
+	    if (global.setImmediate) {
+	        return;
+	    }
+	
+	    var nextHandle = 1; // Spec says greater than zero
+	    var tasksByHandle = {};
+	    var currentlyRunningATask = false;
+	    var doc = global.document;
+	    var setImmediate;
+	
+	    function addFromSetImmediateArguments(args) {
+	        tasksByHandle[nextHandle] = partiallyApplied.apply(undefined, args);
+	        return nextHandle++;
+	    }
+	
+	    // This function accepts the same arguments as setImmediate, but
+	    // returns a function that requires no arguments.
+	    function partiallyApplied(handler) {
+	        var args = [].slice.call(arguments, 1);
+	        return function() {
+	            if (typeof handler === "function") {
+	                handler.apply(undefined, args);
+	            } else {
+	                (new Function("" + handler))();
+	            }
+	        };
+	    }
+	
+	    function runIfPresent(handle) {
+	        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
+	        // So if we're currently running a task, we'll need to delay this invocation.
+	        if (currentlyRunningATask) {
+	            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
+	            // "too much recursion" error.
+	            setTimeout(partiallyApplied(runIfPresent, handle), 0);
+	        } else {
+	            var task = tasksByHandle[handle];
+	            if (task) {
+	                currentlyRunningATask = true;
+	                try {
+	                    task();
+	                } finally {
+	                    clearImmediate(handle);
+	                    currentlyRunningATask = false;
+	                }
+	            }
+	        }
+	    }
+	
+	    function clearImmediate(handle) {
+	        delete tasksByHandle[handle];
+	    }
+	
+	    function installNextTickImplementation() {
+	        setImmediate = function() {
+	            var handle = addFromSetImmediateArguments(arguments);
+	            process.nextTick(partiallyApplied(runIfPresent, handle));
+	            return handle;
+	        };
+	    }
+	
+	    function canUsePostMessage() {
+	        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
+	        // where `global.postMessage` means something completely different and can't be used for this purpose.
+	        if (global.postMessage && !global.importScripts) {
+	            var postMessageIsAsynchronous = true;
+	            var oldOnMessage = global.onmessage;
+	            global.onmessage = function() {
+	                postMessageIsAsynchronous = false;
+	            };
+	            global.postMessage("", "*");
+	            global.onmessage = oldOnMessage;
+	            return postMessageIsAsynchronous;
+	        }
+	    }
+	
+	    function installPostMessageImplementation() {
+	        // Installs an event handler on `global` for the `message` event: see
+	        // * https://developer.mozilla.org/en/DOM/window.postMessage
+	        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
+	
+	        var messagePrefix = "setImmediate$" + Math.random() + "$";
+	        var onGlobalMessage = function(event) {
+	            if (event.source === global &&
+	                typeof event.data === "string" &&
+	                event.data.indexOf(messagePrefix) === 0) {
+	                runIfPresent(+event.data.slice(messagePrefix.length));
+	            }
+	        };
+	
+	        if (global.addEventListener) {
+	            global.addEventListener("message", onGlobalMessage, false);
+	        } else {
+	            global.attachEvent("onmessage", onGlobalMessage);
+	        }
+	
+	        setImmediate = function() {
+	            var handle = addFromSetImmediateArguments(arguments);
+	            global.postMessage(messagePrefix + handle, "*");
+	            return handle;
+	        };
+	    }
+	
+	    function installMessageChannelImplementation() {
+	        var channel = new MessageChannel();
+	        channel.port1.onmessage = function(event) {
+	            var handle = event.data;
+	            runIfPresent(handle);
+	        };
+	
+	        setImmediate = function() {
+	            var handle = addFromSetImmediateArguments(arguments);
+	            channel.port2.postMessage(handle);
+	            return handle;
+	        };
+	    }
+	
+	    function installReadyStateChangeImplementation() {
+	        var html = doc.documentElement;
+	        setImmediate = function() {
+	            var handle = addFromSetImmediateArguments(arguments);
+	            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+	            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+	            var script = doc.createElement("script");
+	            script.onreadystatechange = function () {
+	                runIfPresent(handle);
+	                script.onreadystatechange = null;
+	                html.removeChild(script);
+	                script = null;
+	            };
+	            html.appendChild(script);
+	            return handle;
+	        };
+	    }
+	
+	    function installSetTimeoutImplementation() {
+	        setImmediate = function() {
+	            var handle = addFromSetImmediateArguments(arguments);
+	            setTimeout(partiallyApplied(runIfPresent, handle), 0);
+	            return handle;
+	        };
+	    }
+	
+	    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
+	    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
+	    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
+	
+	    // Don't get fooled by e.g. browserify environments.
+	    if ({}.toString.call(global.process) === "[object process]") {
+	        // For Node.js before 0.9
+	        installNextTickImplementation();
+	
+	    } else if (canUsePostMessage()) {
+	        // For non-IE10 modern browsers
+	        installPostMessageImplementation();
+	
+	    } else if (global.MessageChannel) {
+	        // For web workers, where supported
+	        installMessageChannelImplementation();
+	
+	    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
+	        // For IE 6–8
+	        installReadyStateChangeImplementation();
+	
+	    } else {
+	        // For older browsers
+	        installSetTimeoutImplementation();
+	    }
+	
+	    attachTo.setImmediate = setImmediate;
+	    attachTo.clearImmediate = clearImmediate;
+	}(new Function("return this")()));
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).clearImmediate, __webpack_require__(2)))
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = function() { throw new Error("define cannot be used indirect"); };
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* (ignored) */
 
 /***/ }
-
-/******/ });
+/******/ ]);
+//# sourceMappingURL=wontrepair.js.map

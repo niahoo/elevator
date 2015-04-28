@@ -36,7 +36,7 @@ module.exports = {
 		modulesDirectories: ['app/js','app/css','node_modules']
 	},
 	_devtool: process.env.APP_DEBUG ? '#eval-source-map' : this.undefined(),
-	// devtool:'#eval-source-map',
+	devtool:'#source-map',
 	plugins: [
 		new webpack.optimize.OccurenceOrderPlugin(true),
 		// new webpack.optimize.UglifyJsPlugin({minimize: true}),
