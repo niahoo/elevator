@@ -69,7 +69,8 @@
 	
 	'use strict';
 	
-	__webpack_require__(5);
+	window.Loops = __webpack_require__(12);
+	window.Proc = __webpack_require__(4);
 
 /***/ },
 /* 1 */
@@ -267,6 +268,8 @@
 		console.log.apply(console, args);
 	};
 	
+	ttrace = noop;
+	
 	function logArgs() {
 		console.log('logArgs', arguments);
 	}
@@ -299,6 +302,7 @@
 		// initialization is synchronous
 		var self = this;
 		spawn(function () {
+			//@todo here async useless
 			var handle = self.next(self.initialize);
 			self.maybeLoop(handle);
 		});
@@ -320,6 +324,9 @@
 		// ttrace('maybeloop', wrapper)
 		if (wrapper instanceof Next || wrapper instanceof Receive) {
 			return this.loop(wrapper.run(this));
+		} else if (wrapper instanceof Exit) {
+			// we stop here
+			return;
 		} else {
 			console.error(wrapper, 'is not a valid wrapper');
 		}
@@ -328,6 +335,10 @@
 	Proc.prototype.next = function (fun, time) {
 		ttrace('next time', time);
 		return new Next(fun, time);
+	};
+	
+	Proc.prototype.exit = function () {
+		return new Exit();
 	};
 	
 	Proc.prototype.receive = function (pattern, fun) {
@@ -357,6 +368,8 @@
 	};
 	
 	// -- Promise wrappers --------------------------------------------------------
+	
+	function Exit() {}
 	
 	function Next(fun, time) {
 		this.fun = fun;
@@ -584,61 +597,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).setImmediate))
 
 /***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	var Proc = __webpack_require__(4);
-	
-	var OKSTYLE = 'color:green';
-	
-	var p = window.p = Proc.spawn(function () {
-		console.log('initializing');
-		console.log('initializing args', arguments);
-		console.log('calling next into initilize');
-		return this.next(mainState);
-	});
-	
-	function mainState() {
-		console.log('%c ~~ entering mainState', 'color:orange');
-		return this.receive('wakeup', function () {
-			console.log('%creceived wakeup', OKSTYLE);
-			return this.next(mainState);
-		}).receive({ type: 'val' }, function (message) {
-			console.log('%creceived value : ', OKSTYLE, message.val);
-			return this.next(mainState);
-		}).receive(150, handle_150).after(30000, function () {
-			return this.next(subState);
-		});
-	}
-	
-	var XXX = 5;
-	
-	function subState() {
-		console.log('%c ~~ entering subState', 'color:darkgreen');
-		return this.async(function (next) {
-			console.log('setting timeout');
-			setTimeout(function () {
-				if (XXX-- > 0) next(mainState);
-			}, 300);
-		});
-	}
-	
-	function handle_150(val) {
-		console.log('%c' + val + ' === 150', OKSTYLE);
-		return this.next(mainState);
-	}
-	p.send('wakeup');
-	p.send({ type: 'val', val: 'spa' });
-	p.send('wakeup');
-	p.send(150);
-	p.send('wakeup');
-	p.send('wakeup');
-	
-	console.log('proc p', p);
-
-/***/ },
+/* 5 */,
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -14064,6 +14023,85 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	/* (ignored) */
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {'use strict';
+	
+	var Promise = __webpack_require__(6).Promise;
+	__webpack_require__(9);
+	var spawn = setImmediate;
+	
+	// A simple function that calls next with a pre-defined state when called
+	var bindNext = function bindNext(next, newState) {
+		return function () {
+			return next(newState);
+		};
+	};
+	
+	function asyncState(callback, state) {
+		(function next(newState) {
+			spawn(function () {
+				callback(newState, next);
+			});
+		})(state);
+	}
+	
+	// simple counters functions. We do not use an abstraction but rather copy paste
+	// the algorythms for performance
+	
+	// runs aync from [0 included -> max EXcluded
+	function asyncCount(max, preCallback) {
+		var run = function run(callback) {
+			var callResolve;
+			var promise = new Promise(function (resolve, reject) {
+				callResolve = resolve;
+			});(function next(i) {
+				if (i < max) spawn(function () {
+					callback(i, bindNext(next, i + 1));
+				});else callResolve();
+			})(0);
+			return promise;
+		};
+		if (preCallback) {
+			return run(preCallback);
+		} else {
+			return run;
+		}
+	}
+	
+	// runs aync from max INcluded -> 1 included
+	function asyncReverseCount(max, preCallback) {
+		var run = function run(callback) {
+			var callResolve;
+			var promise = new Promise(function (resolve, reject) {
+				callResolve = resolve;
+			});(function next(i) {
+				if (i > 0) spawn(function () {
+					callback(i, bindNext(next, i - 1));
+				});else callResolve();
+			})(max);
+			return promise;
+		};
+		if (preCallback) {
+			return run(preCallback);
+		} else {
+			return run;
+		}
+	}
+	
+	module.exports = {
+		async: {
+			state: asyncState,
+			r: asyncReverseCount,
+			n: asyncCount
+		}
+	};
+	// <-- promise will be empty
+	// <-- promise will be empty
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).setImmediate))
 
 /***/ }
 /******/ ]);

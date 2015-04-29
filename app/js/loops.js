@@ -1,60 +1,61 @@
-// Defines a simple function that loops forever with a state. The callback
-// is responsible for calling the next() function
-var stateLoop = function(callback, state){
-	var next = function(newState, time) {
-		after(time || 0, function() { callback(newState, next) })
-	}
-	callback(state, next)
-}
+var Promise = require('es6-promise').Promise
+require('setImmediate')
+var spawn = setImmediate
 
-// alias for flip'd setTimeout
-function after(t, f) {
-	if (t === 0) return now(f)
-	return setTimeout(f,t)
-}
-
-var now = root.setImmediate || function(f) { setTimeout(f,0) }
-
-// returns a function that accepts a time and calls the next loop with the
-// new state after this time
-function wrapNext(next, newState) {
-	return function(time) {
-		next(newState, time)
+// A simple function that calls next with a pre-defined state when called
+var bindNext = function(next, newState) {
+	return function() {
+		return next(newState)
 	}
 }
 
-stateLoop(function(num,next){
-	if (num < 15)
-	next(num + 1)
-}, 0)
-
-// Loops upwards from 1 to max
-stateLoop.n = function(max, callback) {
-	if (max < 1) throw new Error('badarg')
-	stateLoop(function(n, next){
-		if (n > max) return
-		callback(n, wrapNext(next, n+1))
-	}, 1) // <- initial state is 1, so we loop <max> times
+function asyncState (callback, state) {
+	(function next(newState) {
+		spawn(function() { callback(newState, next) })
+	}(state))
 }
 
-// Loops upwards from 0 to (max - 1 )
-stateLoop.n0 = function(max, callback) {
-	if (max < 0) throw new Error('badarg')
-	stateLoop(function(n, next){
-		if (n === max) return
-		callback(n, wrapNext(next, n+1))
-	}, 0) // <- initial state is 0
+// simple counters functions. We do not use an abstraction but rather copy paste
+// the algorythms for performance
+
+// runs aync from [0 included -> max EXcluded
+function asyncCount (max, preCallback) {
+	var run = function(callback) {
+		var callResolve
+		var promise = new Promise(function(resolve, reject){
+			callResolve = resolve
+		})
+		;(function next(i) {
+			if (i < max) spawn(function() { callback(i, bindNext(next, i+1)) })
+			else callResolve() // <-- promise will be empty
+		}(0))
+		return promise
+	}
+	if (preCallback) return run(preCallback)
+	else return run
 }
 
-// Loops downwards from max to 1
-stateLoop.r = function(max, callback) {
-	if (max < 1) throw new Error('badarg')
-	stateLoop(function(n, next){
-		if (n === 0) return
-		callback(n, wrapNext(next, n-1))
-	}, max)
+// runs aync from max INcluded -> 1 included
+function asyncReverseCount (max, preCallback) {
+	var run = function(callback) {
+		var callResolve
+		var promise = new Promise(function(resolve, reject){
+			callResolve = resolve
+		})
+		;(function next(i) {
+			if (i > 0) spawn(function() { callback(i, bindNext(next, i-1)) })
+			else callResolve() // <-- promise will be empty
+		}(max))
+		return promise
+	}
+	if (preCallback) return run(preCallback)
+	else return run
 }
 
-
-// @todo check for CommonJS & AMD befor exporting in the global namespace
-module.exports = stateLoop
+module.exports = {
+	async: {
+		state: asyncState,
+		r: asyncReverseCount,
+		n: asyncCount
+	}
+}

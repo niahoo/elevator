@@ -21,4 +21,5 @@ window.WontRepair = function(node) {
 console.log('WontRepair installed')
 */
 
-require('ptest')
+window.Loops = require('loops')
+window.Proc = require('proc')

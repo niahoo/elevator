@@ -9,4 +9,80 @@
 <div id="container">This should not be visible</div>
 
 <script type="text/javascript" src="dist/wontrepair.js"></script>
+<script>
+
+var MSGSTYLE = 'color:green'
+
+
+var p = window.p = Proc.spawn(function (){
+	// console.log('initializing')
+	// console.log('initializing args', arguments)
+	// console.log('calling next into initilize')
+	this.state = {count:0}
+	return this.next(waitStart)
+})
+
+
+function waitStart() {
+	return this.receive('wakeup', function(){
+		console.log('starting')
+		this.state.startAt = new Date()
+		return this.next(waitLeft)
+	})
+	.after(30000, function(){ return this.next(waitStart)})
+}
+function waitLeft() {
+	return this.receive({type:'left'}, function(message){
+		// // console.log('%creceived left : ', MSGSTYLE, message.val)
+		this.state.left = message.val
+		return this.next(waitRight)
+	})
+	.after(10, function(){ return this.next(onTimeout)})
+}
+function waitRight() {
+	return this.receive({type:'right'}, function(message){
+		// // console.log('%creceived right : ', MSGSTYLE, message.val)
+		this.state.right = message.val
+		return this.next(printValues)
+	})
+	.after(10, function(){ return this.next(onTimeout)})
+}
+function printValues() {
+	var left = this.state.left, right = this.state.right, sum = left + right
+	this.state.count++
+	// console.log('%cValues %d + %d = %d', 'color:orange', left, right, sum)
+	console.log('%c => count : %d', 'color:orange', this.state.count)
+	return this.next(waitLeft)
+}
+function onTimeout() {
+	var ms = (new Date) - this.state.startAt
+	console.log('%cCount : %d in %d ms (%f sec)', 'color:red', this.state.count, ms, ms/1000)
+	return this.exit()
+}
+
+var perfruns = 100
+
+p.send('wakeup')
+Loops.async.n(100)(function(i, topNext){
+
+	console.log('sending n°' + i)
+
+	Loops.async.r(perfruns, function(i, next){
+		console.log('%casync %d', 'color:pink', i)
+		p.send({type:'left',val:i})
+		next()
+	})
+	.then(topNext)
+
+	Loops.async.n(perfruns)(function(i, next){
+		console.log('%casync %d', 'color:violet', i)
+		p.send({type:'right',val:i})
+		next()
+	})
+
+
+}).then(function(){
+})
+
+</script>
 

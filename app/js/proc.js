@@ -30,6 +30,8 @@ var ttrace = function() {
 	console.log.apply(console, args)
 }
 
+ttrace = noop
+
 function logArgs () {
 	console.log('logArgs', arguments)
 }
@@ -61,7 +63,7 @@ function Proc(init) {
 	this.client = new Client(this.__mailbox)
 	// initialization is synchronous
 	var self = this
-	spawn(function(){
+	spawn(function(){ //@todo here async useless
 		var handle = self.next(self.initialize)
 		self.maybeLoop(handle)
 	})
@@ -83,6 +85,9 @@ Proc.prototype.maybeLoop = function(wrapper) {
 	// ttrace('maybeloop', wrapper)
 	if (wrapper instanceof Next || wrapper instanceof Receive) {
 		return this.loop(wrapper.run(this))
+	} else if (wrapper instanceof Exit) {
+		// we stop here
+		return
 	} else {
 		console.error(wrapper, 'is not a valid wrapper')
 	}
@@ -91,6 +96,10 @@ Proc.prototype.maybeLoop = function(wrapper) {
 Proc.prototype.next = function(fun, time) {
 	ttrace('next time', time)
 	return new Next(fun, time)
+}
+
+Proc.prototype.exit = function() {
+	return new Exit()
 }
 
 Proc.prototype.receive = function(pattern, fun) {
@@ -120,6 +129,8 @@ Proc.prototype.onError = function(err, ret) {
 }
 
 // -- Promise wrappers --------------------------------------------------------
+
+function Exit() {}
 
 function Next(fun, time) {
 	this.fun = fun
