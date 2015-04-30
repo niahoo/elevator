@@ -35,11 +35,11 @@ module.exports = {
 	resolve: {
 		modulesDirectories: ['app/js','app/css','node_modules']
 	},
-	_devtool: process.env.APP_DEBUG ? '#eval-source-map' : this.undefined(),
-	devtool:'#source-map',
+	devtool: process.env.APP_DEBUG ? '#eval-source-map' : this.undefined,
+	// devtool:'#source-map',
 	plugins: [
 		new webpack.optimize.OccurenceOrderPlugin(true),
-		// new webpack.optimize.UglifyJsPlugin({minimize: true}),
+		new webpack.optimize.UglifyJsPlugin({minimize: true}),
 		new webpack.optimize.DedupePlugin()
 	]
 }

@@ -1,4 +1,4 @@
-var Promise = require('es6-promise').Promise
+// var Promise = require('es6-promise').Promise
 require('setImmediate')
 var spawn = setImmediate
 
@@ -52,10 +52,18 @@ function asyncReverseCount (max, preCallback) {
 	else return run
 }
 
+// just like async state ... with no state
+function forever (callback) {
+	(function next() {
+		spawn(function() { callback(next) })
+	}())
+}
+
 module.exports = {
 	async: {
 		state: asyncState,
 		r: asyncReverseCount,
-		n: asyncCount
+		n: asyncCount,
+		forever: forever
 	}
 }

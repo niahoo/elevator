@@ -3,10 +3,7 @@
 <meta charset="utf-8">
 <title>JS test</title>
 
-
-<h1>JS test</h1>
-
-<div id="container">This should not be visible</div>
+…
 
 <script type="text/javascript" src="dist/wontrepair.js"></script>
 <script>
@@ -24,6 +21,7 @@ var p = window.p = Proc.spawn(function (){
 
 
 function waitStart() {
+	console.log('%center state %s','color:darkgreen', arguments.callee.name)
 	return this.receive('wakeup', function(){
 		console.log('starting')
 		this.state.startAt = new Date()
@@ -32,22 +30,32 @@ function waitStart() {
 	.after(30000, function(){ return this.next(waitStart)})
 }
 function waitLeft() {
+	console.log('%center state %s','color:darkgreen', arguments.callee.name)
 	return this.receive({type:'left'}, function(message){
-		// // console.log('%creceived left : ', MSGSTYLE, message.val)
+		// console.log('%creceived left : ', MSGSTYLE, message.val)
 		this.state.left = message.val
 		return this.next(waitRight)
 	})
-	.after(10, function(){ return this.next(onTimeout)})
+	.after(0, function(){ return this.next(waitRight)})
 }
 function waitRight() {
+	console.log('%center state %s','color:darkgreen', arguments.callee.name)
 	return this.receive({type:'right'}, function(message){
 		// // console.log('%creceived right : ', MSGSTYLE, message.val)
 		this.state.right = message.val
 		return this.next(printValues)
 	})
-	.after(10, function(){ return this.next(onTimeout)})
+	.receive(function(message){
+		return String(message) === message
+	}, function(message) {
+		console.log('%creceived a string : %s', 'color:blue', message)
+		return this.next(waitRight)
+	})
+	._(flush(waitLeft))
+	.after(5e3, function(){ return this.next(onTimeout)})
 }
 function printValues() {
+	console.log('%center state %s','color:darkgreen', arguments.callee.name)
 	var left = this.state.left, right = this.state.right, sum = left + right
 	this.state.count++
 	// console.log('%cValues %d + %d = %d', 'color:orange', left, right, sum)
@@ -55,34 +63,53 @@ function printValues() {
 	return this.next(waitLeft)
 }
 function onTimeout() {
+	console.log('%center state %s','color:darkgreen', arguments.callee.name)
 	var ms = (new Date) - this.state.startAt
 	console.log('%cCount : %d in %d ms (%f sec)', 'color:red', this.state.count, ms, ms/1000)
-	return this.exit()
+	return this.next(waitLeft)
+}
+function flush(next) {
+	return function(message){
+		console.log('%creceived other : ', 'color:blue', message)
+		return this.next(next)
+	}
 }
 
-var perfruns = 100
+var perfruns = 10
 
 p.send('wakeup')
-Loops.async.n(100)(function(i, topNext){
 
-	console.log('sending n°' + i)
-
-	Loops.async.r(perfruns, function(i, next){
-		console.log('%casync %d', 'color:pink', i)
-		p.send({type:'left',val:i})
-		next()
-	})
-	.then(topNext)
-
-	Loops.async.n(perfruns)(function(i, next){
-		console.log('%casync %d', 'color:violet', i)
-		p.send({type:'right',val:i})
-		next()
-	})
-
-
-}).then(function(){
+Loops.async.forever(function(next){
+	var wait = Math.random() * 2e3 >> 0
+	var msg = wait % 2 == 0 ? {type:'WTF',val:'hi!'} : 'Hello !'
+	console.log('%csend other ', 'color:darkblue',msg)
+	p.send(msg)
+	setTimeout(next, wait)
 })
+
+setTimeout(function(){
+	Loops.async.n(10)(function(i, topNext){
+
+		console.log('sending n°' + i)
+
+		Loops.async.r(perfruns, function(i, next){
+			console.log('%send left %d', 'color:pink', i)
+			p.send({type:'left',val:i})
+			next()
+		})
+		.then(topNext)
+
+		Loops.async.n(perfruns)(function(i, next){
+			console.log('%send right %d', 'color:violet', i)
+			p.send({type:'right',val:i})
+			next()
+		})
+
+
+	})
+})
+
+
 
 </script>
 

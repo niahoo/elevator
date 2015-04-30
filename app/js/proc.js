@@ -1,8 +1,12 @@
 var extend = require('extend')
 require('setImmediate')
-var _ = require('lodash')
+var _ = {
+	isFinite: require('lodash/lang/isFinite'),
+	matches: require('lodash/utility/matches'),
+	cloneDeep: require('lodash/lang/cloneDeep')
+}
 var spawn = setImmediate
-var Promise = require('es6-promise').Promise
+// var Promise = require('es6-promise').Promise
 
 function noop() {
 	/* hi ! */
@@ -36,6 +40,8 @@ function logArgs () {
 	console.log('logArgs', arguments)
 }
 
+function alwaysTrue() { return true }
+
 var bif = (function(){
 	var t = 0
 	return function() {
@@ -45,15 +51,22 @@ var bif = (function(){
 	}
 }())
 
-// How it works
-//
-// The user provides an `initialize` function. This function is wrapped into a
-// `Next` object and passed to `maybeLoop` which receives wrappers. `maybeLoop`
-// checks that it is actually a wrapper and calls `.run()` on the wrapper,
-// passing proc context. Wrappers must return promises. Then, `maybeLoop` send
-// the response from `wrapper.run()` to `proc.loop()` which receives promises.
-// `proc.loop()` adds a `.then()` to the promise, accepting a new promises (such
-// as a new `Next` resulting from the user calling `this.next`)
+/*******************************************************************************
+
+	How it works
+
+	The user provides an `initialize` function. This function is wrapped into a
+	`Next` object and passed to `maybeLoop` which accepts wrappers.
+
+	`maybeLoop` checks that it is actually a wrapper and calls `.run()` on the
+	wrapper, passing proc context (the value of 'this' in the wrapped
+	function'). Wrappers must return promises. Then, `maybeLoop` send the
+	response from `wrapper.run()` to `proc.loop()` which accepts promises.
+	`proc.loop()` calls `.then()` on the promise with a callback that accepts a
+	wrapper and send it to `maybeloop`. Now, go back to the beginning of this
+	paragraph and read again.
+
+*******************************************************************************/
 
 
 function Proc(init) {
@@ -161,20 +174,35 @@ Receive.prototype.receive = function (pattern, callback) {
 	return this
 }
 
-Receive.prototype.OFF_getPredicateFunction = function (pattern) {
-	var pred = typeof pattern === 'object'
-		? _.matches(pattern)
-		: strictIsEqualTo(pattern)
-	return function(t) {
-		ttrace(pattern, ' not match ', t)
-		return pred(t)
-	}
+// matches anything (wildcard)
+Receive.prototype._ = function (callback) {
+	var predicate = alwaysTrue
+	this.clauses.push([alwaysTrue, callback])
+	return this
+}
+
+Receive.prototype._ = function (callback) {
+	return this.receive(alwaysTrue, callback)
 }
 
 Receive.prototype.getPredicateFunction = function (pattern) {
-	return typeof pattern === 'object'
-		? _.matches(pattern)
-		: strictIsEqualTo(pattern)
+	var predicate = this.REAL_getPredicateFunction(pattern)
+	return function(t) {
+		var matched = predicate(t)
+		ttrace(pattern, matched ? ' matches ' : ' does not matches ', t)
+		return matched
+	}
+}
+
+Receive.prototype.REAL_getPredicateFunction = function (pattern) {
+	switch (typeof pattern) {
+		case 'object':
+			return _.matches(pattern)
+		case 'function':
+			return pattern // if already a predicate, just use it
+		default:
+			return strictIsEqualTo(pattern)
+	}
 }
 //	this.chain = this.chain.then(function(acc){
 //		// if previous clause has found a message, just pass the context through
@@ -354,6 +382,7 @@ Client.prototype.send = function (message) {
 
 Proc.spawn = function(init) {
 	var proc = new Proc(init)
+	proc.client.__proc = proc
 	return proc.client
 }
 
