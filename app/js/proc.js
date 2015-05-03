@@ -1,5 +1,5 @@
 var extend = require('extend')
-require('setImmediate')
+require('setimmediate')
 var _ = {
 	isFinite: require('lodash/lang/isFinite'),
 	matches: require('lodash/utility/matches'),

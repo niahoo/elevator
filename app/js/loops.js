@@ -1,5 +1,5 @@
 // var Promise = require('es6-promise').Promise
-require('setImmediate')
+require('setimmediate')
 var spawn = setImmediate
 
 // A simple function that calls next with a pre-defined state when called

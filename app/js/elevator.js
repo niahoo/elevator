@@ -1,4 +1,5 @@
 var _ = require('lodash')
+window.Proc = require('proc')
 var machina = require('machina')
 
 function propStore (initialProps) {
@@ -60,116 +61,53 @@ var defaultProps = {
 	storeys: [], // a list of storey objects
 }
 
-function createElevator(_props) {
-
-	var lastWakeupID = -999
-
-	var wid = (function(){
-		var wid = 0
-		return function(){
-			wid++
-			console.log('generate new wid ' + wid)
-			return wid
-		}
-	}())
-
-	// this handles state data @todo use immutable data (deep (mori ?), Immutable stores mutable objects)
-	var props = propStore(_.merge({},defaultProps,_props))
-
+function createElevator() {
 	var STOPPER = 3
 
-	var ElevatorFsm = machina.Fsm.extend({
-		namespace: 'elevator',
-		initialState: 'uninitialized',
-		initialize: function() {},
-		states: {
-			uninitialized: {
-				_onEnter: function(){
-					this.deferUntilTransition()
-					this.transition('maybeMove')
-				}
-			},
-			idle: {
-				_onEnter: function(){
-					console.log('Elevator idle')
-				},
-				wakeup: function(id) {
-					console.log('received signal ' + id)
-					console.log(' - lastWakeupID =  ' + lastWakeupID)
-					if (id > lastWakeupID) {
-						console.log('set lastWakeupID to ' + id)
-						lastWakeupID = id
-						console.log('go maybeMove')
-						this.transition('maybeMove')
-					}
-					else {
-						console.log('ignore signal')
-						return //ignore, not the last signal
-					}
-				}
-			},
-			// maybeMove is the state juut before the elevator moves. It must
-			// be transitionned to AFTER the doors were closed, and AFTER a
-			// little more time allowing people to push a storey button to go to
-			maybeMove: {
-				_onEnter: function(){
-					this.deferUntilTransition()
-					console.log('Elevator maybeMove')
-					var nextIndex = this.nextDestination()
-					if (nextIndex !== false) { // next can be 0
-						var diff = Math.abs(nextIndex - props.currentStorey)
-						// @todo time calculation should happen only when
-						// hardware changes (and on init)
-						var duration = diff * storeyTravelDuration(props.direction, props.hardware)
-						this.emit('moving', nextIndex, duration)
-						var self = this
-						after(duration, function(){
-							props.currentStorey = nextIndex
-							self.emit('waypointReached', nextIndex)
-							self.deleteWaypoint(nextIndex)
-							self.transition('openingDoors')
-						})
-					} else {
-						this.transition('idle')
-					}
-				},
-			},
-			openingDoors: {
-				_onEnter: function(){
-					this.deferUntilTransition()
-					var self = this
-					after(props.hardware.doors.openingDuration, function(){
-						self.transition('doorsOpen')
-					})
-				}
-			},
-			doorsOpen: {
-				_onEnter: function(){
-					this.deferUntilTransition()
-					var self = this
-					after(props.openAwaitingTime, function(){
-						self.transition('closingDoors')
-					})
-				}
-			},
-			closingDoors: {
-				_onEnter: function(){
-					this.deferUntilTransition()
-					// animation reflects only the closing time
-					this.emit('closingDoors', props.hardware.doors.closingDuration)
-					// but we wait more
-					var totalDuration = props.hardware.doors.closingDuration + props.closedAwaitingTime
-					var self = this
-					after(totalDuration, function(){
-						self.transition('maybeMove')
-					})
-				}
-			},
+	// props are available to both the proc and the client
+	var props = extend({},defaultProps)
+
+	var elevator = Proc.spawn({
+		initialize: function(index) {
+			return this.next()
 		},
-		// public API --
-		getProps: function() {
-			return _.cloneDeep(props)
+		deleteWaypoint: function(index) {
+			console.log('deleteWaypoint', index)
+			delete props.waypoints[index]
+			delete props.waypointsUp[index]
+			delete props.waypointsDown[index]
 		},
+		nextDestination: function () {
+			console.log('nextDestination')
+			function OR (a,b) { return a || b }
+			var upwards = _.keys(_.merge({},props.waypointsUp, props.waypoints, OR))
+			var downwards = _.keys(_.merge({},props.waypointsDown, props.waypoints, OR))
+			// - If we are moving up, we want the next destination that is higher
+			// than our current position and is a standard waypoint or is a
+			// going-up waypoint.
+			// - If none matches, we want the highest (most far away in our
+			// direction) waypoint that wants to go downwards : from there, we
+			// will take every people going downwards
+			// - If none matches, we change direction and do the opposite in the
+			// same order
+			// - If note matches, we go idle
+
+			// @todo give priority to people in the cabin ?
+			var choices = {}
+			choices[directio
+
+			n.UP]   = _.min(_.filter(upwards, function(x){ return  x > props.currentStorey }).map(Number))
+			choices[direction.DOWN] = _.max(_.filter(downwards, function(x){ return  x < props.currentStorey }).map(Number))
+			// if there is no destination in the current direction, we should
+			// change direction. the _.min / _.max values return Infinity / -Infinity
+			// if the filter returns no value. So we want something finite
+			if (! _.isFinite(choices[props.direction])) this.changeDirection()
+			// here, direction could have changed. Again, we check if finite and
+			// return either the next destination or false
+			return (_.isFinite(choices[props.direction])
+				? choices[props.direction]
+				: false)
+		}
 		changeDirection: function() {
 			console.log('changeDirection')
 			if (props.direction === direction.UP) {
@@ -177,7 +115,9 @@ function createElevator(_props) {
 			} else if (props.direction === direction.DOWN) {
 				props.direction = direction.UP
 			}
-		},
+		}
+	})
+	var clientApi = {
 		addWaypointUp: function(index) {
 			console.log('addWaypointUp',index)
 			props.waypointsUp[index] = true
@@ -192,38 +132,9 @@ function createElevator(_props) {
 			console.log('addWaypoint',index)
 			props.waypoints[index] = true
 			this.handle('wakeup', wid())
-		},
-		deleteWaypoint: function(index) {
-			console.log('deleteWaypoint', index)
-			delete props.waypoints[index]
-			delete props.waypointsUp[index]
-			delete props.waypointsDown[index]
-		},
-		nextDestination: function () {
-			console.log('nextDestination')
-			function OR (a,b) { return a || b }
-			var upwards = _.keys(_.merge({},props.waypointsUp, props.waypoints, OR))
-			var downwards = _.keys(_.merge({},props.waypointsDown, props.waypoints, OR))
-			// if we are moving up, we want the next destination that is higher
-			// than our current position, and the opposite if moving downwards
-			// so for moving up, we want the MINIMUM higher.
-			// We convert the keys to Numbers as _.isFinite returns true only for numbers
-			var choices = {}
-			choices[direction.UP]   = _.min(_.filter(upwards, function(x){ return  x > props.currentStorey }).map(Number))
-			choices[direction.DOWN] = _.max(_.filter(downwards, function(x){ return  x < props.currentStorey }).map(Number))
-			// if there is no destination in the current direction, we should
-			// change direction. the _.min / _.max values return Infinity / -Infinity
-			// if the filter returns no value. So we want something finite
-			if (! _.isFinite(choices[props.direction])) this.changeDirection()
-			// here, direction could have changed. Again, we check if finite and
-			// return either the next destination or false
-			return (_.isFinite(choices[props.direction])
-				? choices[props.direction]
-				: false)
-		},
-	})
+		}
+	}
 
-	return new ElevatorFsm()
 }
 
 
