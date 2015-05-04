@@ -22,12 +22,9 @@
   },
   "homepage": "https://github.com/niahoo/elevator",
   "dependencies": {
-    "babel": "^5.1.13",
     "es6-promise": "^2.1.1",
     "extend": "^2.0.1",
-    "generator-runner": "^2.2.0",
     "lodash": "^3.7.0",
-    "machina": "^1.0.0",
     "ractive": "^0.7.2",
     "setimmediate": "^1.0.2"
   },
