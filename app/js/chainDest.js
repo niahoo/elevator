@@ -1,3 +1,5 @@
+var isFinite = require('lodash/lang/isFinite')
+
 
 var  l = console.log.bind(console)
 var  ll = console.log.bind(console,' - list')
@@ -53,14 +55,33 @@ DestinationSelector.prototype.call = function(f) {
 	return this
 }
 
-// Theese functions returns values, at the end of the chain
+// Theese functions set only one candidate in the list
 
 DestinationSelector.prototype.min = function(n) {
-	return Math.min.apply(null, this.candidates)
+	this.candidates = [Math.min.apply(null, this.candidates)]
+	return this
 }
 
 DestinationSelector.prototype.max = function(n) {
-	return Math.max.apply(null, this.candidates)
+	this.candidates = [Math.max.apply(null, this.candidates)]
+	return this
+}
+
+DestinationSelector.prototype.force = function(n) {
+	return n
+}
+
+DestinationSelector.prototype.orElse = function(next) {
+	// if there's only one candidate left and it's a storey (not Infinity or
+	// -Inifnity), returns it.
+
+	// else, execute the callback 'next' containing a new selection. But before
+	// clean the new candidates
+	if (this.candidates.length === 1 && isFinite(this.candidates[0])) {
+		return this.candidates[0]
+	} else {
+		return next.bind(this)()
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -77,23 +98,40 @@ function waypoints()     { return Object.keys(data.waypoints).map(Number) }
 function waypointsUp()   { return Object.keys(data.waypointsUp).map(Number) }
 function waypointsDown() { return Object.keys(data.waypointsDown).map(Number) }
 
-// the current floor
-function current() { return 15 }
+// returns waypointsUp if direction is UP, waypointsDown if direction is DOWN
+function waypointsSameDir() {
+	if (currentDirection() === direction.UP) {
+		return waypointsUp()
+	} else {
+		return waypointsDown()
+	}
+}
+
+var direction = {UP: 'UP', DOWN: 'DOWN'}
+
+function currentFloor() { return 15 }
+function currentDirection() { return direction.UP }
 
 function id (x) { return x }
 
 
 function userFunction(destinationSelector) {
-	var result = destinationSelector
+	var result = destinationSelector.orElse(function(){ // orElse 0 start
+		return this /* chain calls */
 
 //* USER INPUT START ---------------------------------------------------------
 
-	.addWaypoints(waypoints())    //   addWaypoints waypoints
-	.addWaypoints(waypointsUp())  //   addWaypoints waypointsUp
-	.higherThan(current())        //   higherThan current
-	.min()                        //   min
+		.addWaypoints(waypoints())         //   addWaypoints waypoints
+		.addWaypoints(waypointsSameDir())  //   addWaypoints waypointsSameDir
+		.higherThan(currentFloor())        //   higherThan currentFloor
+		.min()                             //   min
+		.orElse(function(){                //	orElse 1 start
+			return this /* chain calls */
+			.force(5)                      //	force 5
+		})                                 //	orElse 1 end
 
 //* USER INPUT END -----------------------------------------------------------
+	}) //	orElse 0 end
 
 	return result
 }
