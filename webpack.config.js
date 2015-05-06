@@ -12,6 +12,15 @@ function appfile (file) {
 	return "./app/" + file
 }
 
+var plugins = [
+	new webpack.optimize.OccurenceOrderPlugin(true),
+	new webpack.optimize.DedupePlugin()
+]
+
+if (! process.env.APP_DEBUG) {
+	plugins.push(new webpack.optimize.UglifyJsPlugin({minimize: true}))
+}
+
 module.exports = {
 	entry: {
 		"wontrepair": appfile("js/main.js"),
@@ -35,11 +44,7 @@ module.exports = {
 	resolve: {
 		modulesDirectories: ['app/js','app/css','node_modules']
 	},
-	devtool: process.env.APP_DEBUG ? '#eval-source-map' : this.undefined,
-	// devtool:'#source-map',
-	plugins: [
-		new webpack.optimize.OccurenceOrderPlugin(true),
-		new webpack.optimize.UglifyJsPlugin({minimize: true}),
-		new webpack.optimize.DedupePlugin()
-	]
+	// devtool: process.env.APP_DEBUG ? '#eval-source-map' : this.undefined,
+	devtool: process.env.APP_DEBUG ? '#source-map' : this.undefined,
+	plugins: plugins
 }

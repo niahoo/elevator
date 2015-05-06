@@ -11,11 +11,7 @@ var conf = {
 	svgWidth: 400,
 	elevatorHeight:70,
 	elevatorWidth:100,
-	storeyElevatorSpacing:10, // horizontal spacing,
-	storeyTravelDuration: {
-		down:500,
-		up:700
-	}
+	storeyElevatorSpacing:10 // horizontal spacing
 }
 
 conf.elevatorX = conf.buildingX + conf.buildingWallThickness + conf.storeyWidth + conf.storeyElevatorSpacing

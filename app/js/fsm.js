@@ -1,16 +1,17 @@
 var extend = require('extend')
-require('setimmediate')
+var BaseClass = require('base-class-extend')
 var _ = {
 	isFinite: require('lodash/lang/isFinite'),
 	matches: require('lodash/utility/matches'),
 	cloneDeep: require('lodash/lang/cloneDeep')
 }
-var spawn = setImmediate
+var spawn = setImmediate // freezes too much
+// var spawn = requestAnimationFrame // too slow
+// var spawn = setTimeout // mid slow, useless timers
+// var spawnNoFail = function(f){setTimeout(f,0)}
 // var Promise = require('es6-promise').Promise
 
-function noop() {
-	/* hi ! */
-}
+function noop() { /* hi ! */ }
 
 function strictIsEqualTo(a) {
 	return function(b) {
@@ -36,110 +37,112 @@ var ttrace = function() {
 
 ttrace = noop
 
-function logArgs () {
-	console.log('logArgs', arguments)
-}
-
 function alwaysTrue() { return true }
-
-var bif = (function(){
-	var t = 0
-	return function() {
-		var d = new Date(), t2 = d.getTime()
-		console.log('%cprev call was ' + (t2-t), 'color:lightblue')
-		t = t2
-	}
-}())
 
 /*******************************************************************************
 
 	How it works
 
 	The user provides an `initialize` function. This function is wrapped into a
-	`Next` object and passed to `maybeLoop` which accepts wrappers.
+	`Next` object and passed to `handleContinuation` which accepts wrappers.
 
-	`maybeLoop` checks that it is actually a wrapper and calls `.run()` on the
+	`handleContinuation` checks that it is actually a wrapper and calls `.run()` on the
 	wrapper, passing proc context (the value of 'this' in the wrapped
-	function'). Wrappers must return promises. Then, `maybeLoop` send the
-	response from `wrapper.run()` to `proc.loop()` which accepts promises.
-	`proc.loop()` calls `.then()` on the promise with a callback that accepts a
-	wrapper and send it to `maybeloop`. Now, go back to the beginning of this
+	function'). Wrappers must return promises. Then, `handleContinuation` send the
+	response from `wrapper.run()` to `proc.__loop()` which accepts promises.
+	`proc.__loop()` calls `.then()` on the promise with a callback that accepts a
+	wrapper and send it to `handleContinuation`. Now, go back to the beginning of this
 	paragraph and read again.
 
 *******************************************************************************/
 
+var Proc = BaseClass.extend('Proc', {
+	constructor: function(init, initArgs) {
+		var opts = typeof init === 'function' ? {initialize:init} : init
+		extend(this, opts)
+		this.__mailbox = new Mailbox()
+		this.client = new Client(this.__mailbox)
+		// initialization is synchronous
+		var handle = this.initialize.apply(this, initArgs)
+		var self = this
+		spawn(function(){
+			self.handleContinuation(handle)
+		})
+	},
 
-function Proc(init) {
-	var opts = typeof init === 'function' ? {initialize:init} : init
-	extend(this, opts)
-	this.__mailbox = new Mailbox()
-	this.client = new Client(this.__mailbox)
-	// initialization is synchronous
-	var self = this
-	spawn(function(){ //@todo here async useless
-		var handle = self.next(self.initialize)
-		self.maybeLoop(handle)
-	})
-}
+	initialize: function(){
+		throw new Error("The 'initialize' method is mandatory.")
+	},
 
-Proc.prototype.loop = function(promise) {
-	// bif()
-	// ttrace('loop', promise)
-	var self = this
-	promise.then(function(val){
-		self.maybeLoop(val)
-	}).catch(function(err){
-		console.error(err.stack)
-		throw err
-	})
-}
+	__loop: function(promise) {
+		// ttrace('__loop', promise)
+		var self = this
+		promise.then(function(val){
+			self.handleContinuation(val)
+		}).catch(function(err){
+			console.error(err.stack)
+			throw err
+		})
+	},
 
-Proc.prototype.maybeLoop = function(wrapper) {
-	// ttrace('maybeloop', wrapper)
-	if (wrapper instanceof Next || wrapper instanceof Receive) {
-		return this.loop(wrapper.run(this))
-	} else if (wrapper instanceof Exit) {
-		// we stop here
-		return
-	} else {
-		console.error(wrapper, 'is not a valid wrapper')
-	}
-}
-
-Proc.prototype.next = function(fun, time) {
-	ttrace('next time', time)
-	return new Next(fun, time)
-}
-
-Proc.prototype.exit = function() {
-	return new Exit()
-}
-
-Proc.prototype.receive = function(pattern, fun) {
-	return new Receive(this.__mailbox).receive(pattern, fun)
-}
-
-// this function allows the user to perform async work and then call the resolve
-// function passing the new looping function. Then we use the .next function to
-// turn the new loop fun into a promise (and to force spawn)
-Proc.prototype.async = function(fun) {
-	var bound = fun.bind(this)
-	var self = this
-	return new Promise(function(resolve, reject) {
-		var next = function(f, time) {
-			resolve([f,time])
+	handleContinuation: function(wrapper) {
+		// ttrace('handleContinuation', wrapper)
+		if (wrapper instanceof Next || wrapper instanceof Receive) {
+			return this.__loop(wrapper.run(this))
+		} else if (wrapper instanceof Exit) {
+			// we stop here
+			return
+		} else {
+			console.error(wrapper, 'is not a valid wrapper')
 		}
-		bound(next)
-	}).then(function(data){
-		return self.next(data[0],data[1])
-	})
-}
+	},
 
-Proc.prototype.onError = function(err, ret) {
-	console.log('onError ret', ret)
-	console.log('onError err', err)
-	throw err
-}
+	next: function(fun, time) {
+		ttrace('next time', time)
+		return new Next(fun, time)
+	},
+
+	exit: function() {
+		return new Exit()
+	},
+
+	receive: function(pattern, fun) {
+		return new Receive(this.__mailbox).receive(pattern, fun)
+	},
+
+	receiveAny: function(fun) {
+		return new Receive(this.__mailbox)._(fun)
+	},
+
+	// This function allows the user to perform async work and then call the
+	// resolve function passing the new continuation function. Then we use a
+	// Next wrapper to turn the continuation fun into a promise (and thus force
+	// spawn)
+	async: function(fun) {
+		var bound = fun.bind(this)
+		var self = this
+		return new Promise(function(resolve, reject) {
+			var next = function(f, time) {
+				resolve([f,time])
+			}
+			bound(next)
+		}).then(function(data){
+			return self.next(data[0],data[1])
+		})
+	}
+})
+
+
+// Override the extend functionnality to automatically spawn, and inherit the
+// overrident extend fun
+
+// var baseProcExtend = Proc.extend
+// Proc.extend = function() {
+// 	var newClass = baseProcExtend.apply(this,arguments)
+// 	newClass.spawn = Proc.spawner(newClass)
+// 	newClass.extend = Proc.extend
+// 	return newClass
+// }
 
 // -- Promise wrappers --------------------------------------------------------
 
@@ -374,14 +377,15 @@ Client.prototype.send = function (message) {
 	var self = this
 	// @todo _.cloneDeep overkill ?
 	ttrace('send message',message)
+	// the message will be received asynchronously (spawn)
 	spawn(function(){ self.mailbox.push(_.cloneDeep(message)) })
 }
 
-
 // -- API ---------------------------------------------------------------------
 
-Proc.spawn = function(init) {
-	var proc = new Proc(init)
+Proc.spawn = function(init, initArgs) {
+	var constructor = this
+	var proc = new constructor(init, initArgs)
 	proc.client.__proc = proc
 	return proc.client
 }

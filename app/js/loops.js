@@ -1,7 +1,6 @@
 // var Promise = require('es6-promise').Promise
-require('setimmediate')
+// var spawn = requestAnimationFrame
 var spawn = setImmediate
-
 // A simple function that calls next with a pre-defined state when called
 var bindNext = function(next, newState) {
 	return function() {

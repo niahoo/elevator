@@ -89,14 +89,14 @@ DestinationSelector.prototype.orElse = function(next) {
 var go = true
 
 var data = {
-	waypoints: {1: true,          4: true,          5: true,          7: true,          8: true},
-	waypointsUp: {2: true,          4: true,          5: true,          6: true,          8: true},
-	waypointsDown: {3: true,          4: true,          2: true,          8: true,          9: true},
+	waypointsCabin: {1: true,          4: true,          5: true,          7: true,          8: true},
+	waypointsUp:    {2: true,          4: true,          5: true,          6: true,          8: true},
+	waypointsDown:  {3: true,          4: true,          2: true,          8: true,          9: true},
 }
 
-function waypoints()     { return Object.keys(data.waypoints).map(Number) }
-function waypointsUp()   { return Object.keys(data.waypointsUp).map(Number) }
-function waypointsDown() { return Object.keys(data.waypointsDown).map(Number) }
+function waypointsCabin() { return Object.keys(data.waypointsCabin).map(Number) }
+function waypointsUp()    { return Object.keys(data.waypointsUp).map(Number)    }
+function waypointsDown()  { return Object.keys(data.waypointsDown).map(Number)  }
 
 // returns waypointsUp if direction is UP, waypointsDown if direction is DOWN
 function waypointsSameDir() {
@@ -121,14 +121,14 @@ function userFunction(destinationSelector) {
 
 //* USER INPUT START ---------------------------------------------------------
 
-		.addWaypoints(waypoints())         //   addWaypoints waypoints
+		.addWaypoints(waypointsCabin())    //   addWaypoints waypointsCabin
 		.addWaypoints(waypointsSameDir())  //   addWaypoints waypointsSameDir
 		.higherThan(currentFloor())        //   higherThan currentFloor
 		.min()                             //   min
-		.orElse(function(){                //	orElse 1 start
+		.orElse(function(){                //	orElse # 1 start
 			return this /* chain calls */
 			.force(5)                      //	force 5
-		})                                 //	orElse 1 end
+		})                                 //	orElse # 1 end
 
 //* USER INPUT END -----------------------------------------------------------
 	}) //	orElse 0 end
