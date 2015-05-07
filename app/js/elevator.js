@@ -1,9 +1,13 @@
 var CabinFSM = require('cabinfsm')
 var extend = require('extend')
+var DestinationSelector = require('destination-selector')
 
-function ElevatorControl (storeys) {
-	this.cabin = CabinFSM.spawn({},['theese','are the','init','args'])
+function ElevatorControl (floors) {
+	this.cabin = CabinFSM.spawn({},[this])
 	this.props = extend({},ElevatorControl.defaultProps)
+	console.error('@todo pick a (random?) floor, set our currentFloor to it and send a goto event to the cabin to force it there')
+	// this.props.currentFloor = 0 // already in default props
+	console.error('@todo listen to cabin events and change currentFloor when the cabins reaches a floor')
 }
 
 ElevatorControl.prototype.deleteWaypoint = function(index) {
@@ -31,24 +35,37 @@ ElevatorControl.prototype.addWaypointCabin = function(index) {
 	this.cabin.send('wakeup')
 }
 
-ElevatorControl.direction = {UP: 'UP', DOWN: 'DOWN'}
+ElevatorControl.prototype.getNextDestination = function() {
+	// we pass all our current information to the selector. It must choose a
+	// destination with a snapshot of the current state. All waypoints are
+	// converted to integers
+	var selector = DestinationSelector.buildSelector({
+		waypointsUp: Object.keys(this.props.waypointsUp).map(Number),
+		waypointsDown: Object.keys(this.props.waypointsDown).map(Number),
+		waypointsCabin: Object.keys(this.props.waypointsCabin).map(Number),
+		currentFloor: this.props.currentFloor,
+		currentDirection: this.props.currentDirection
+	})
+	return selector.getNext()
+}
+
 ElevatorControl.direction = {UP: 'UP', DOWN: 'DOWN'}
 
 ElevatorControl.defaultProps = {
-	direction: ElevatorControl.direction.UP, // no matter at the beginning but it must be set
-	currentStorey: 0,
+	currentDirection: ElevatorControl.direction.UP, // no matter at the beginning but it must be set
+	currentFloor: 0,
 
 	// WAYPOINTS. waypoints stores are sets, i.e we only consider the keys. Set
-	// wp[2]to any value to stop at the storey which index is 2.
-	// delete wp[2] when at the storey to clean the object keys. (clean the
+	// wp[2]to any value to stop at the floor which index is 2.
+	// delete wp[2] when at the floor to clean the object keys. (clean the
 	// three lists).
 	// --
-	// We handle two buttons at each storey : one to go down, one to go up
-	waypointsUp: {}, // list of storeys that upmoving people want to reach
+	// We handle two buttons at each floor : one to go down, one to go up
+	waypointsUp: {}, // list of floors that upmoving people want to reach
 	waypointsDown: {}, // … the opposite
-	// when in the cabin, the selected storeys are stored into waypoints,
+	// when in the cabin, the selected floors are stored into waypoints,
 	// because we do not know (IRL) which people pushed them ant where they want
-	// to go. To implement undirected buttons at storeys, make a call to add
+	// to go. To implement undirected buttons at floors, make a call to add
 	// calls there and ignore waypointsUp/Down
 	waypointsCabin: {},
 
@@ -56,8 +73,8 @@ ElevatorControl.defaultProps = {
 	timer: undefined, // A timer used to have cancellable setTimeout
 
 
-	// STOREYS
-	storeys: [], // a list of storey objects
+	// floorS
+	floors: [], // a list of floor objects
 }
 
 

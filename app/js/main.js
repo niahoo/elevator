@@ -18,7 +18,7 @@ window.WontRepair = function(node) {
 	console.log('elv',elv)// DEBUG
 	setTimeout(function(){
 		elv.addWaypointUp(1)
-	}, 1000)
+	}, 300)
 }
 
 console.log('WontRepair installed')
