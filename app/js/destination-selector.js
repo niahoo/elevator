@@ -1,11 +1,18 @@
 function DestinationSelector(data, algorithm) {
-	this.data = data
+	this.data = new DataWrapper(data)
 	// we directly bind the algorithm function to our object since the function
 	// uses our API and returns a destination
 	this.getNext = algorithm
 	// the 'candiates' Array will contain the selected destination. If the Array
 	// lenghts comes to 1, then a destination is found
 	this.candidates = []
+}
+
+DestinationSelector.prototype.setCandidates = function(candidates){
+	// this is just a wrapper function for the property assignment to allow
+	// adding debug
+	console.log('new candidates', candidates)
+	this.candidates = candidates
 }
 
 DestinationSelector.buildSelector = function(data){
@@ -34,50 +41,60 @@ DestinationSelector.prototype.d = function() {
 
 DestinationSelector.prototype.addWaypoints = function() {
 	// arguments must be lists of waypoints
-	this.candidates = Array.prototype.slice.call(arguments)
+	this.setCandidates(
+		Array.prototype.slice.call(arguments)
 		.reduce(function(acc, wps){
 			return acc.concat(wps)
 		}, this.candidates)
+	)
 	return this
 }
 
 DestinationSelector.prototype.clear = function() {
 	// arguments must be lists of waypoints
-	this.candidates = Array.prototype.slice.call(arguments)
+	this.setCandidates(
+		Array.prototype.slice.call(arguments)
 		.reduce(function(acc, wps){
 			return acc.concat(wps)
 		}, this.candidates)
+	)
 	return this
 }
 
 DestinationSelector.prototype.higherThan = function(n) {
-	this.candidates = this.candidates.filter(function(c){
-		return c > n
-	})
+	console.log('called higherThan',n)
+	this.setCandidates(
+		this.candidates.filter(function(c){
+			console.log('%d > %d = %s',c,n,c>n)
+			return c > n
+		})
+	)
 	return this
 }
 
 DestinationSelector.prototype.LowerThan = function(n) {
-	this.candidates = this.candidates.filter(function(c){
-		return c < n
-	})
+	this.setCandidates(
+		this.candidates.filter(function(c){
+			return c < n
+		})
+	)
 	return this
 }
 
 DestinationSelector.prototype.call = function(f) {
-	this.candidates = f(this.candidates)
+	this.setCandidates(f(this.candidates))
 	return this
 }
 
 // Theese functions set only one candidate in the list
 
 DestinationSelector.prototype.min = function(n) {
-	this.candidates = [Math.min.apply(null, this.candidates)]
+	this.setCandidates([Math.min.apply(null, this.candidates)])
 	return this
 }
 
 DestinationSelector.prototype.max = function(n) {
-	this.candidates = [Math.max.apply(null, this.candidates)]
+	this.setCandidates([Math.max.apply(null, this.candidates)])
 	return this
 }
 
@@ -105,13 +122,25 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 		return this /* chain calls */
 
 	// user input (right comments below) consists in commands and arguments
-	// commands are calls to 'this', chained ; arguments are properties of
-	// 'this.data'. The orElse command is special, it wraps the following code
-	// until the end of input in a callback (like a monad binding).
+	// commands are calls to 'this', chained ; arguments are calls to the
+	// DataWrapper API (which only defines getters but allows throwning an
+	// exception if a non-defined property is asked, since the function won't
+	// exist)
+
+	// The orElse command is special, as it actually returns the destination if
+	// any is found. As of input, it wraps the code coming after it downto the
+	// end of input in a callback (like a monad binding).
+
+	// only 'orElse' and 'force' actually retuns an integer as a selected
+	// destination
+
+	// '' @todo command to return idle
+
 //* USER INPUT START ---------------------------------------------------------
-		.addWaypoints(this.data.waypointsCabin)        // addWaypoints waypointsCabin
-		.addWaypoints(this.data.waypointsSameDir)      // addWaypoints waypointsSameDir
-		.higherThan(this.data.currentFloor)            // higherThan currentFloor
+		.addWaypoints(this.data.waypointsCabin())        // addWaypoints waypointsCabin
+		// .addWaypoints(this.data.waypointsUp())        // addWaypoints waypointsCabin
+		// .addWaypoints(this.data.waypointsSameDirection())      // addWaypoints waypointsSameDirection
+		.higherThan(this.data.currentFloor())            // higherThan currentFloor
 		.min()                                         // min
 		.orElse(function(){                            // orElse # 1 start
 			return this                                // // inserted by the parser
@@ -121,6 +150,20 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 	}) // end of base wrapping
 
 	return result
+}
+
+function DataWrapper(data) {
+	console.log('built DataWrapper with data',data)
+	this.data = data
+}
+
+DataWrapper.prototype.currentFloor = function() { return this.data.currentFloor }
+DataWrapper.prototype.currentDirection = function() { return this.data.currentDirection }
+DataWrapper.prototype.waypointsCabin = function() { return this.data.waypointsCabin }
+DataWrapper.prototype.waypointsUp = function() { return this.data.waypointsUp }
+DataWrapper.prototype.waypointsDown = function() { return this.data.waypointsDown }
+DataWrapper.prototype.waypointsSameDirection = function() {
+	throw new Error('@todo function waypointsSameDirection!')
 }
 
 module.exports = DestinationSelector

@@ -46,7 +46,9 @@ ElevatorControl.prototype.getNextDestination = function() {
 		currentFloor: this.props.currentFloor,
 		currentDirection: this.props.currentDirection
 	})
-	return selector.getNext()
+	var nextDestination = selector.getNext()
+	console.log('nextDestination = ', nextDestination)
+	return nextDestination
 }
 
 ElevatorControl.direction = {UP: 'UP', DOWN: 'DOWN'}
