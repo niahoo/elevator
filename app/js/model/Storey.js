@@ -7,4 +7,11 @@ function Storey(position, altitude) {
 	this.altitude = altitude
 }
 
+Storey.makeCollection = function(altitudes) {
+	var pos = 0
+	return altitudes.map(function(alt){
+		return new Storey(pos++,alt)
+	})
+}
+
 module.exports = Storey

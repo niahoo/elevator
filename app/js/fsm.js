@@ -132,18 +132,6 @@ var Proc = BaseClass.extend('Proc', {
 	}
 })
 
-
-// Override the extend functionnality to automatically spawn, and inherit the
-// overrident extend fun
-
-// var baseProcExtend = Proc.extend
-// Proc.extend = function() {
-// 	var newClass = baseProcExtend.apply(this,arguments)
-// 	newClass.spawn = Proc.spawner(newClass)
-// 	newClass.extend = Proc.extend
-// 	return newClass
-// }
-
 // -- Promise wrappers --------------------------------------------------------
 
 function Exit() {}
@@ -384,6 +372,9 @@ Client.prototype.send = function (message) {
 // -- API ---------------------------------------------------------------------
 
 Proc.spawn = function(init, initArgs) {
+	// called as a static function, 'this' will refer to the extended class if
+	// any. BaseClass will take care of this static function being inherited to
+	// the derived classes
 	var constructor = this
 	var proc = new constructor(init, initArgs)
 	proc.client.__proc = proc

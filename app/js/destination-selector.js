@@ -1,3 +1,5 @@
+var direction = require('constants').direction
+
 function DestinationSelector(data, algorithm) {
 	this.data = new DataWrapper(data)
 	// we directly bind the algorithm function to our object since the function
@@ -39,6 +41,11 @@ DestinationSelector.prototype.d = function() {
 	return this
 }
 
+DestinationSelector.prototype.trace = function(code) {
+	console.log('%c%s','color:blue;font-weight:bold',code)
+	return this
+}
+
 DestinationSelector.prototype.addWaypoints = function() {
 	// arguments must be lists of waypoints
 	this.setCandidates(
@@ -59,6 +66,18 @@ DestinationSelector.prototype.clear = function() {
 		}, this.candidates)
 	)
 	return this
+}
+
+// following filters higherThan(n) if current direction is up, or lowerThan(n)
+// if current direction is DOWN
+DestinationSelector.prototype.following = function(n) {
+	var dir = this.data.currentDirection()
+	console.log('called following %s, direction is %s',n,dir)
+	switch (dir) {
+		case direction.UP : return this.higherThan(n)
+		case direction.DOWN : return this.LowerThan(n)
+		default: throw new Error('bad direction')
+	}
 }
 
 DestinationSelector.prototype.higherThan = function(n) {
@@ -98,8 +117,14 @@ DestinationSelector.prototype.max = function(n) {
 	return this
 }
 
+// Theese functions returns a storey number
+
 DestinationSelector.prototype.force = function(n) {
 	return n
+}
+
+DestinationSelector.prototype.stop = function() {
+	return null
 }
 
 DestinationSelector.prototype.orElse = function(next) {
@@ -109,8 +134,10 @@ DestinationSelector.prototype.orElse = function(next) {
 	// else, execute the callback 'next' containing a new selection. But before
 	// clean the new candidates
 	if (this.candidates.length === 1 && isFinite(this.candidates[0])) {
+		console.log('Candidate matches')
 		return this.candidates[0]
 	} else {
+		this.setCandidates([]) // clear
 		return next.bind(this)()
 	}
 }
@@ -134,17 +161,22 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 	// only 'orElse' and 'force' actually retuns an integer as a selected
 	// destination
 
-	// '' @todo command to return idle
-
 //* USER INPUT START ---------------------------------------------------------
+		.trace('addWaypoints waypointsCabin')
 		.addWaypoints(this.data.waypointsCabin())        // addWaypoints waypointsCabin
-		// .addWaypoints(this.data.waypointsUp())        // addWaypoints waypointsCabin
-		// .addWaypoints(this.data.waypointsSameDirection())      // addWaypoints waypointsSameDirection
-		.higherThan(this.data.currentFloor())            // higherThan currentFloor
+		.trace('addWaypoints waypointsSameDirection')
+		.addWaypoints(this.data.waypointsSameDirection())      // addWaypoints waypointsSameDirection
+		// .trace('higherThan currentFloor')
+		// .higherThan(this.data.currentFloor())            // higherThan currentFloor
+		.trace('following currentFloor')
+		.following(this.data.currentFloor())            // higherThan currentFloor
+		.trace('min')
 		.min()                                         // min
+		.trace('orElse')
 		.orElse(function(){                            // orElse # 1 start
 			return this                                // // inserted by the parser
-			.force(5)                                  // // force 5
+			.trace('stop')
+			.stop()                                  // // stop
 		})                                             // orElse # 1 end
 //* USER INPUT END -----------------------------------------------------------
 	}) // end of base wrapping
@@ -152,18 +184,24 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 	return result
 }
 
-function DataWrapper(data) {
-	console.log('built DataWrapper with data',data)
-	this.data = data
+function DataWrapper(dataset) {
+	console.log('built DataWrapper with dataset',dataset)
+	this.dataset = dataset
 }
 
-DataWrapper.prototype.currentFloor = function() { return this.data.currentFloor }
-DataWrapper.prototype.currentDirection = function() { return this.data.currentDirection }
-DataWrapper.prototype.waypointsCabin = function() { return this.data.waypointsCabin }
-DataWrapper.prototype.waypointsUp = function() { return this.data.waypointsUp }
-DataWrapper.prototype.waypointsDown = function() { return this.data.waypointsDown }
+
+DataWrapper.prototype.currentFloor = function() { return this.dataset.currentFloor }
+DataWrapper.prototype.currentDirection = function() { return this.dataset.currentDirection }
+DataWrapper.prototype.waypointsCabin = function() { return this.dataset.waypointsCabin }
+DataWrapper.prototype.waypointsUp = function() { return this.dataset.waypointsUp }
+DataWrapper.prototype.waypointsDown = function() { return this.dataset.waypointsDown }
 DataWrapper.prototype.waypointsSameDirection = function() {
-	throw new Error('@todo function waypointsSameDirection!')
+	switch (this.currentDirection()) {
+		case direction.UP : return this.waypointsUp()
+		case direction.DOWN : return this.waypointsDown()
+		default: throw new Error('bad direction')
+	}
+
 }
 
 module.exports = DestinationSelector

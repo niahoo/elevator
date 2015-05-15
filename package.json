@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/niahoo/elevator",
   "dependencies": {
+    "async-emitter": "^1.5.2",
     "base-class-extend": "0.0.14",
     "extend": "^2.0.1",
     "lodash": "^3.7.0",
