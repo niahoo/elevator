@@ -97,9 +97,9 @@ var Proc = BaseClass.extend('Proc', {
 		}
 	},
 
-	next: function(fun, time) {
+	next: function(fun, time, stateArgs) {
 		ttrace('next time', time)
-		return new Next(fun, time)
+		return new Next(fun, time, stateArgs)
 	},
 
 	exit: function() {
@@ -116,19 +116,20 @@ var Proc = BaseClass.extend('Proc', {
 
 	// This function allows the user to perform async work and then call the
 	// resolve function passing the new continuation function. Then we use a
-	// Next wrapper to turn the continuation fun into a promise (and thus force
-	// spawn)
+	// Next wrapper to turn the continuation fun into a promise
 	async: function(fun) {
 		var bound = fun.bind(this)
 		var self = this
 		return new Promise(function(resolve, reject) {
-			var next = function(f, time) {
-				resolve([f,time])
+			var next = function(f, time, nesStateArgs) {
+				var resolveData = [f,time,nesStateArgs]
+				resolve(resolveData)
 			}
 			bound(next)
-		}).then(function(data){
-			return self.next(data[0],data[1])
+		}).then(function(resolveData){
+			return self.next(resolveData[0],resolveData[1],resolveData[2])
 		})
+		// @todo catch
 	}
 })
 
@@ -136,13 +137,19 @@ var Proc = BaseClass.extend('Proc', {
 
 function Exit() {}
 
-function Next(fun, time) {
+function Next(fun, time, newStateArgs) {
 	this.fun = fun
 	this.time = time
+	this.newStateArgs = newStateArgs || []
 }
 
 Next.prototype.run = function (context) {
-	var bound = this.fun.bind(context), self = this
+	var self = this
+	// the looping function is bound to the context and will be called with
+	// any arguments passed in newStateArgs
+	var bound = function() {
+		return self.fun.apply(context, self.newStateArgs)
+	}
 	return new Promise(function(resolve, reject){
 		var work = function(){ resolve(bound()) }
 		// -- Asynchronicity is forced here since .next receives the optional

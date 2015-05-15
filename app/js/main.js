@@ -11,14 +11,14 @@ window.WontRepair = function(node) {
 	// create storeys from their altitude
 	var building = new Building({
 		storeys: [
-			{ id:    0
-			, floor: 0 //
+			{ position:        0
+			, floorAltitude:   0
 			},
-			{ id:    1
-			, floor: 110 //
+			{ position:        1
+			, floorAltitude: 110
 			},
-			{ id:    2
-			, floor: 220 //
+			{ position:        2
+			, floorAltitude: 220
 			}
 		]
 	})

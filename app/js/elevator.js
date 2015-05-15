@@ -4,18 +4,18 @@ var DestinationSelector = require('destination-selector')
 var AsyncEmitter = require('async-emitter')
 
 function ElevatorControl (building) {
-	this.cabin = CabinFSM.spawn({},[this])
 	this.props = extend({},ElevatorControl.defaultProps)
 	this.building = building
 	this.emitter = new AsyncEmitter()
+	this.nextDestination = null // contains a floor position
+	this.currentFloor = null // contains a floor position too
 	console.error('@todo pick a (random?) floor, set our currentFloor to it and send a goto event to the cabin to force it there')
 	// this.props.currentFloor = 0 // already in default props
 	console.error('@todo listen to cabin events and change currentFloor when the cabins reaches a floor')
 	console.log('ElevatorControl this',this)
 	this.setEmitterListeners()
-	// once everything is alright we can tell the cabin to start listening for
-	// commands
-	this.wakeupCabin()
+	// we boot the cabin last as it starts emitting events immediately
+	this.cabin = CabinFSM.spawn({},[this])
 }
 
 ElevatorControl.prototype.deleteWaypoint = function(index) {
@@ -44,6 +44,7 @@ ElevatorControl.prototype.addWaypointCabin = function(index) {
 }
 
 ElevatorControl.prototype.wakeupCabin = function(index) {
+	console.log('waking up cabin')
 	this.cabin.send('wakeup')
 }
 
@@ -58,13 +59,18 @@ ElevatorControl.prototype.maybeGoToNextDestination = function() {
 		currentFloor: this.props.currentFloor,
 		currentDirection: this.props.currentDirection
 	})
-	var nextDestination = selector.getNext()
+	this.nextDestination = selector.getNext()
 	// if we have a new destination, we will send a command to the cabin to go
 	// at the altitude of the new floor
-	console.log('nextDestination', nextDestination)
-	if (nextDestination !== null) {
+	console.log('nextDestination', this.nextDestination)
+	if (this.nextDestination !== null) {
 		// @todo define client API
-		this.cabin.send({command:'MOVE', })
+		console.log('this.building.getStorey(this.nextDestination)',this.building.getStorey(this.nextDestination))
+		console.log('this.building.getStorey(this.nextDestination).floorAltitude', this.building.getStorey(this.nextDestination).floorAltitude)
+		this.cabin.send({
+			command:'MOVE',
+			floorAltitude: this.building.getStorey(this.nextDestination).floorAltitude
+		})
 	}
 }
 
@@ -72,13 +78,26 @@ ElevatorControl.prototype.notify = function() {
 	var debugArgs = ['sending constrol notification'].concat(Array.prototype.slice.call(arguments))
 	console.log.apply(console,debugArgs)
 	// the notification simply proxies all arguments to the emitter.
-	console.log('notify this',this)
-	console.log('notify this',this)
 	return this.emitter.emit.apply(this.emitter, arguments)
 }
 
 ElevatorControl.prototype.notifyCabinIdle = function() {
 	return this.notify('CABIN_IDLE')
+}
+ElevatorControl.prototype.notifyStartingMove = function(currentAltitude, goalAltitude, travelTime) {
+	return this.notify('CABIN_STARTED_MOVE', currentAltitude, goalAltitude, travelTime)
+}
+ElevatorControl.prototype.notifyCabinAltitude = function(altitude) {
+	return this.notify('CABIN_ALTITUDE', altitude)
+}
+ElevatorControl.prototype.notifyCabinStopped = function() {
+	return this.notify('CABIN_STOPPED')
+}
+ElevatorControl.prototype.notifyGatesOpening = function(duration) {
+	return this.notify('CABIN_GATES_OPENING',duration)
+}
+ElevatorControl.prototype.notifyGatesOpen = function(duration) {
+	return this.notify('CABIN_GATES_OPEN')
 }
 
 ElevatorControl.prototype.setEmitterListeners = function() {
