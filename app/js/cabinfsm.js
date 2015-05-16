@@ -19,7 +19,7 @@ var CabinFSM = FSM.extend('CabinFSM', {
 
 	hardware: defaultHardware,
 	openAwaitingTime: 300,	 // default time with the doors left open
-	closedAwaitingTime: 300, // default time after doors close before set destination & move
+	closedAwaitingTime: 500, // default time after doors close before set destination & move
 	doorsStates: doorsStates,
 	state: {}, // state is a custom object
 	doorsState: doorsStates.CLOSE,
@@ -45,23 +45,18 @@ var CabinFSM = FSM.extend('CabinFSM', {
 		.receive('wakeup', function(message){
 			// we received a wakeup notification, telling us that there is work
 			// to do. we will flush all the others wakeup messages in queue and
-			// then send a notification telling we're idle. So we will expect a
-			// command message in return
-			return (function flush(message) {
-				console.log('flushing wakeups',message)
-				return this.receive('wakeup', flush)
-				.after(0, function(){
-					// no more wakeup message, we can tell that we are idle
-					// and move on
-					return this.next(this.idle)
-				})
-			}).bind(this)()
+			// then send a notification telling we're idle. We expect a command
+			// message in return
+			return this.flushAll('wakeup', function(){
+				// no more wakeup message, we can loop on idle
+				return this.next(this.idle)
+			})
 		})
 		._(function(anyMessage){
 			console.log('CabinFSM received unattended message : ', anyMessage)
 			return this.next(this.idle)
 		})
-		.after(5000, function(){
+		.after(50000000, function(){
 			// this is useless
 			console.log('cabin idle timeout, sending notification again')
 			return this.next(this.idle)
@@ -72,43 +67,56 @@ var CabinFSM = FSM.extend('CabinFSM', {
 		// check the altitude difference
 		this.nextAltitude = moveCommand.floorAltitude
 		var altDiff = this.nextAltitude - this.currentAltitude
-		// if the diff is positive, we are going up. negative -> down
-		console.log('onMove moveCommand', moveCommand)
-		console.log('onMove altDiff', altDiff)
-		var travelTime = storeyTravelDuration(altDiff, this.hardware)
-		// Here, we must calculate the cabin movement according to the hardware
-		// configuration
-		console.log('onMove travelTime %sms', travelTime)
-		var moveStartedAt  = new Date
-		var moveFinishesAt = new Date
-		moveFinishesAt.setTime(moveStartedAt.getTime() + travelTime)
-		var intervalDuration = 200
-		var pixelsPerInterval = altDiff / (travelTime / intervalDuration)
-		console.log('moveStartedAt ',moveStartedAt.getTime())
-		console.log('moveFinishesAt',moveFinishesAt.getTime())
-		console.log('pixelsPerInterval',pixelsPerInterval)
+		var travelTime
+		var self = this
+		if (altDiff !== 0) {
+			// if the diff is positive, we are going up. negative -> down
+			console.log('onMove moveCommand', moveCommand)
+			console.log('onMove altDiff', altDiff)
+			travelTime = storeyTravelDuration(altDiff, this.hardware)
+			// Here, we must calculate the cabin movement according to the hardware
+			// configuration
+			console.log('onMove travelTime %sms', travelTime)
+			var moveStartedAt  = new Date
+			var moveFinishesAt = new Date
+			moveFinishesAt.setTime(moveStartedAt.getTime() + travelTime)
+			var intervalDuration = 200
+			var pixelsPerInterval = altDiff / (travelTime / intervalDuration)
+			console.log('pixelsPerInterval = %s / (%s / %s)', altDiff,travelTime,intervalDuration)
+			console.log('moveStartedAt ',moveStartedAt.getTime())
+			console.log('moveStartedAt ',moveStartedAt.getTime())
+			console.log('moveFinishesAt',moveFinishesAt.getTime())
+			console.log('pixelsPerInterval',pixelsPerInterval)
 
-		this.control.notifyStartingMove(this.currentAltitude, this.nextAltitude, travelTime)
-		return this.async(function(next){
+			this.control.notifyStartingMove(this.currentAltitude, this.nextAltitude, travelTime)
 			// we set an interval that will notify the new altitutde every once in a
 			// while
-			var self = this
 			this.movingInterval = setInterval(function() {
 				self.currentAltitude = self.currentAltitude + pixelsPerInterval
 				self.control.notifyCabinAltitude(self.currentAltitude)
 			}, intervalDuration)
 			// and a timeout that will continue the fsm execution after the
-			// travel time to arrival handling
-			setTimeout(function(){
-				clearInterval(self.movingInterval)
-				self.currentAltitude = self.nextAltitude
-				self.nextAltitude = null
-				next(self.onArrival)
-			},travelTime)
+			// travel time to arrival handling. We also listen for emergency
+			// stops
+		} else {
+			// no altitude moving, we go at the same floor we already are
+			travelTime = 0
+		}
+		return this.receive('emergency_stop',function(){
+			console.error('@todo emergency stopped')
+			clearInterval(self.movingInterval)
+		}).after(travelTime, function(){
+			console.error('cabin arrived')
+			clearInterval(self.movingInterval)
+			// we arrived so we set our altitude to our goal altitude
+			self.currentAltitude = self.nextAltitude
+			self.nextAltitude = null
+			return this.next(self.onArrival)
 		})
 	},
 
 	onArrival: function() {
+		this.control.notifyArrived()
 		this.control.notifyCabinStopped(this.currentAltitude)
 		this.control.notifyGatesOpening(this.hardware.doors.openingDuration)
 		return this.next(this.onGatesOpen, this.hardware.doors.openingDuration)
@@ -122,7 +130,7 @@ var CabinFSM = FSM.extend('CabinFSM', {
 
 		// we must handle people's weight physically so in this FSM because it
 		// handle physics
-		console.error('@todo handle people')
+		console.warn('@todo handle people')
 
 		return this.receive('reopen', function(){
 			console.log('asked to reopen')
@@ -134,11 +142,28 @@ var CabinFSM = FSM.extend('CabinFSM', {
 	},
 
 	closingGates: function() {
-		console.error('@todo')
-		// receive "reopen" here to. We should calculate from how much time
-		// the gates were closing, and with a ratio estimate how much time
-		// they'll take to be open again
+		console.log('gates closing')
+		var now = new Date,
+		    waitTime = this.hardware.doors.closingDuration + this.closedAwaitingTime
 
+		return this.receive('reopen', function(){
+			// if receiving reopen, we calculate the elapsed ratio of closing
+			// time. We will be on reopening during the same ratio of opening.
+			// But as we also wait for closedAwaitingTime before being idle, we
+			// limit the elapsed time to the closing time (this is obvious)
+			this.flushAll('reopen')
+			var elapsed = Math.min(this.hardware.doors.closingDuration, (new Date).getTime() - now.getTime())
+			var elapsedRatio = this.hardware.doors.closingDuration / elapsed
+			var openingTime = this.hardware.doors.openingDuration / elapsedRatio
+			console.log('elapsed', elapsed)
+			console.log('elapsedRatio', elapsedRatio)
+			console.log('openingTime', openingTime)
+			this.control.notifyGatesOpening(openingTime)
+			return this.next(this.onGatesOpen, openingTime)
+		})
+		.after(waitTime, function(){
+			return this.next(this.idle)
+		})
 		// the elevator should be still able to accept people into the cabin
 	}
 

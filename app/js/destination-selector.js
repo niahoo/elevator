@@ -59,13 +59,7 @@ DestinationSelector.prototype.addWaypoints = function() {
 
 DestinationSelector.prototype.clear = function() {
 	// arguments must be lists of waypoints
-	this.setCandidates(
-		Array.prototype.slice.call(arguments)
-		.reduce(function(acc, wps){
-			return acc.concat(wps)
-		}, this.candidates)
-	)
-	return this
+	this.setCandidates([])
 }
 
 // following filters higherThan(n) if current direction is up, or lowerThan(n)
@@ -78,6 +72,20 @@ DestinationSelector.prototype.following = function(n) {
 		case direction.DOWN : return this.LowerThan(n)
 		default: throw new Error('bad direction')
 	}
+}
+
+// selects a floor if present
+DestinationSelector.prototype.checkFloor = function(n) {
+	var found = false
+	for (var i = 0, l = this.candidates.length; i < l; i++) {
+		if (this.candidates[i] === n) found = true
+		break
+	}
+	if (found) {
+		// the floor is found in the waypoints, we set it as our candidate
+		this.setCandidates([n])
+	}
+	return this
 }
 
 DestinationSelector.prototype.higherThan = function(n) {
@@ -137,7 +145,7 @@ DestinationSelector.prototype.orElse = function(next) {
 		console.log('Candidate matches')
 		return this.candidates[0]
 	} else {
-		this.setCandidates([]) // clear
+		this.clear()
 		return next.bind(this)()
 	}
 }
@@ -161,22 +169,32 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 	// only 'orElse' and 'force' actually retuns an integer as a selected
 	// destination
 
+	// @todo if there is no waypoint at all, do not run the algorithm and return
+	// null immediately
+
 //* USER INPUT START ---------------------------------------------------------
-		.trace('addWaypoints waypointsCabin')
-		.addWaypoints(this.data.waypointsCabin())        // addWaypoints waypointsCabin
-		.trace('addWaypoints waypointsSameDirection')
-		.addWaypoints(this.data.waypointsSameDirection())      // addWaypoints waypointsSameDirection
-		// .trace('higherThan currentFloor')
-		// .higherThan(this.data.currentFloor())            // higherThan currentFloor
-		.trace('following currentFloor')
-		.following(this.data.currentFloor())            // higherThan currentFloor
-		.trace('min')
-		.min()                                         // min
-		.trace('orElse')
+		.trace('addWaypoints allWaypoints')
+		.addWaypoints(this.data.allWaypoints())        // addWaypoints allWaypoints
+		.trace('checkFloor currentFloor')
+		.checkFloor(this.data.currentFloor())                                // checkFloor currentFloor
 		.orElse(function(){                            // orElse # 1 start
 			return this                                // // inserted by the parser
-			.trace('stop')
-			.stop()                                  // // stop
+			.trace('addWaypoints waypointsCabin')
+			.addWaypoints(this.data.waypointsCabin())        // addWaypoints waypointsCabin
+			.trace('addWaypoints waypointsSameDirection')
+			.addWaypoints(this.data.waypointsSameDirection())      // addWaypoints waypointsSameDirection
+			// .trace('higherThan currentFloor')
+			// .higherThan(this.data.currentFloor())            // higherThan currentFloor
+			.trace('following currentFloor')
+			.following(this.data.currentFloor())            // higherThan currentFloor
+			.trace('min')
+			.min()                                         // min
+			.trace('orElse')
+			.orElse(function(){                            // orElse # 2 start
+				return this                                // // inserted by the parser
+				.trace('stop')
+				.stop()                                  // // stop
+			})                                             // orElse # 2 end
 		})                                             // orElse # 1 end
 //* USER INPUT END -----------------------------------------------------------
 	}) // end of base wrapping
@@ -195,6 +213,11 @@ DataWrapper.prototype.currentDirection = function() { return this.dataset.curren
 DataWrapper.prototype.waypointsCabin = function() { return this.dataset.waypointsCabin }
 DataWrapper.prototype.waypointsUp = function() { return this.dataset.waypointsUp }
 DataWrapper.prototype.waypointsDown = function() { return this.dataset.waypointsDown }
+DataWrapper.prototype.allWaypoints = function() {
+	return this.waypointsUp()
+		.concat(this.waypointsDown())
+		.concat(this.waypointsCabin())
+}
 DataWrapper.prototype.waypointsSameDirection = function() {
 	switch (this.currentDirection()) {
 		case direction.UP : return this.waypointsUp()

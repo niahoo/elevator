@@ -62,6 +62,7 @@ var Proc = BaseClass.extend('Proc', {
 		extend(this, opts)
 		this.__mailbox = new Mailbox()
 		this.client = new Client(this.__mailbox)
+		this.__onErrorBound = this.onError.bind(this)
 		// initialization is synchronous
 		var handle = this.initialize.apply(this, initArgs)
 		var self = this
@@ -79,10 +80,8 @@ var Proc = BaseClass.extend('Proc', {
 		var self = this
 		promise.then(function(val){
 			self.handleContinuation(val)
-		}).catch(function(err){
-			console.error(err.stack)
-			throw err
 		})
+		.catch(this.__onErrorBound)
 	},
 
 	handleContinuation: function(wrapper) {
@@ -95,6 +94,12 @@ var Proc = BaseClass.extend('Proc', {
 		} else {
 			console.error(wrapper, 'is not a valid wrapper')
 		}
+	},
+
+	onError: function(err) {
+		console.error('Promise error')
+		console.error(err.stack)
+		throw err
 	},
 
 	next: function(fun, time, stateArgs) {
@@ -114,6 +119,20 @@ var Proc = BaseClass.extend('Proc', {
 		return new Receive(this.__mailbox)._(fun)
 	},
 
+	flushAll: function(pattern, afterCallback) {
+		var cb = afterCallback || noop
+		console.log('%cflushing all messages', 'color:orange', pattern)
+		return new Receive(this.__mailbox)
+			.receive(pattern, function(){
+				// if we find a matching message, we loop to keep flushing
+				return this.flushAll(pattern, afterCallback)
+			})
+			// if no message is found, we stop here. If the user provided a
+			// callback, we execute it, that's why we use 'return's. But the
+			// function can be used without a return clause
+			.after(0, cb)
+	},
+
 	// This function allows the user to perform async work and then call the
 	// resolve function passing the new continuation function. Then we use a
 	// Next wrapper to turn the continuation fun into a promise
@@ -128,7 +147,7 @@ var Proc = BaseClass.extend('Proc', {
 			bound(next)
 		}).then(function(resolveData){
 			return self.next(resolveData[0],resolveData[1],resolveData[2])
-		})
+		}).catch(this.__onErrorBound)
 		// @todo catch
 	}
 })
@@ -324,7 +343,9 @@ Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
 				callback = clause[1]
 				if (predicate(message)) {
 					self.onMessage = false
-					// a clearTimeout should be useless as the promise can only
+					// If the message maches, we clear the timeout of the after-
+					// clause
+					// A clearTimeout should be useless as the promise can only
 					// be resolved once ; but doing so we dicard any debug trace
 					// in the timeout callback. (@todo in production, no debug
 					// => no clearTimeout)
@@ -341,7 +362,7 @@ Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
 			}
 			return false
 		}
-		// set the onmessage listener. If the timeout is 0, a matching message has already be
+		// set the onmessage listener.
 		if (_.isFinite(timeout)) {
 			// if the timeout occurs, we resolve the Promise with the associated
 			// callback and an undefined message

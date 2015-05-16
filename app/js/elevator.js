@@ -7,8 +7,6 @@ function ElevatorControl (building) {
 	this.props = extend({},ElevatorControl.defaultProps)
 	this.building = building
 	this.emitter = new AsyncEmitter()
-	this.nextDestination = null // contains a floor position
-	this.currentFloor = null // contains a floor position too
 	console.error('@todo pick a (random?) floor, set our currentFloor to it and send a goto event to the cabin to force it there')
 	// this.props.currentFloor = 0 // already in default props
 	console.error('@todo listen to cabin events and change currentFloor when the cabins reaches a floor')
@@ -20,9 +18,9 @@ function ElevatorControl (building) {
 
 ElevatorControl.prototype.deleteWaypoint = function(index) {
 	console.log('deleteWaypoint', index)
-	delete this.props.waypoints[index]
 	delete this.props.waypointsUp[index]
 	delete this.props.waypointsDown[index]
+	delete this.props.waypointsCabin[index]
 }
 
 ElevatorControl.prototype.addWaypointUp = function(index) {
@@ -44,6 +42,7 @@ ElevatorControl.prototype.addWaypointCabin = function(index) {
 }
 
 ElevatorControl.prototype.wakeupCabin = function(index) {
+	var self = this
 	console.log('waking up cabin')
 	this.cabin.send('wakeup')
 }
@@ -59,19 +58,23 @@ ElevatorControl.prototype.maybeGoToNextDestination = function() {
 		currentFloor: this.props.currentFloor,
 		currentDirection: this.props.currentDirection
 	})
-	this.nextDestination = selector.getNext()
+	this.props.nextDestination = selector.getNext()
 	// if we have a new destination, we will send a command to the cabin to go
 	// at the altitude of the new floor
-	console.log('nextDestination', this.nextDestination)
-	if (this.nextDestination !== null) {
+	console.log('nextDestination', this.props.nextDestination)
+	if (this.props.nextDestination !== null) {
 		// @todo define client API
-		console.log('this.building.getStorey(this.nextDestination)',this.building.getStorey(this.nextDestination))
-		console.log('this.building.getStorey(this.nextDestination).floorAltitude', this.building.getStorey(this.nextDestination).floorAltitude)
-		this.cabin.send({
-			command:'MOVE',
-			floorAltitude: this.building.getStorey(this.nextDestination).floorAltitude
+		console.log('this.building.getStorey(this.props.nextDestination)',this.building.getStorey(this.props.nextDestination))
+		console.log('this.building.getStorey(this.props.nextDestination).floorAltitude', this.building.getStorey(this.props.nextDestination).floorAltitude)
+		this.sendCabinCommand('MOVE',{
+			floorAltitude: this.building.getStorey(this.props.nextDestination).floorAltitude
 		})
 	}
+}
+
+ElevatorControl.prototype.sendCabinCommand = function(command,opts) {
+	opts.command = command
+	this.cabin.send(opts)
 }
 
 ElevatorControl.prototype.notify = function() {
@@ -90,8 +93,11 @@ ElevatorControl.prototype.notifyStartingMove = function(currentAltitude, goalAlt
 ElevatorControl.prototype.notifyCabinAltitude = function(altitude) {
 	return this.notify('CABIN_ALTITUDE', altitude)
 }
-ElevatorControl.prototype.notifyCabinStopped = function() {
-	return this.notify('CABIN_STOPPED')
+ElevatorControl.prototype.notifyArrived = function() {
+	return this.notify('CABIN_ARRIVED')
+}
+ElevatorControl.prototype.notifyCabinStopped = function(altitude) {
+	return this.notify('CABIN_STOPPED', altitude)
 }
 ElevatorControl.prototype.notifyGatesOpening = function(duration) {
 	return this.notify('CABIN_GATES_OPENING',duration)
@@ -106,13 +112,22 @@ ElevatorControl.prototype.setEmitterListeners = function() {
 		// when the cabin is idle,
 		self.maybeGoToNextDestination()
 	})
+	this.emitter.on('CABIN_ARRIVED', function(altitude) {
+		// cabin stopped at a floor. it sure is our next destination since we
+		// only send move commands once at a time
+		self.props.currentFloor = self.props.nextDestination
+		console.log('%ccurrent floor = %s','color:orange', self.props.currentFloor)
+		self.props.nextDestination = null
+		self.deleteWaypoint(self.props.currentFloor)
+	})
 }
 
 ElevatorControl.direction = require('constants').direction
 
 ElevatorControl.defaultProps = {
 	currentDirection: ElevatorControl.direction.UP, // no matter at the beginning but it must be set
-	currentFloor: 0,
+	currentFloor: null, // a floor position
+	nextDestination: null, // a floor position too
 
 	// WAYPOINTS. waypoints stores are sets, i.e we only consider the keys. Set
 	// wp[2]to any value to stop at the floor which index is 2.
