@@ -28,7 +28,6 @@ var CabinFSM = FSM.extend('CabinFSM', {
 	movingInterval: null,
 
 	initialize: function(control) {
-		console.log('CabinFSM initialize args', arguments)
 		this.control = control // control is the elevator main controller
 		// at the beginning, doors are close and the cabin is stopped, so we are
 		// in an 'idle' state
@@ -38,7 +37,6 @@ var CabinFSM = FSM.extend('CabinFSM', {
 	idle: function() {
 		// here, the doors are close. We can notify our controller that we are
 		// ready to do some movement
-		console.log('cabin entering idle')
 		this.control.notifyCabinIdle()
 		return this
 		.receive({command:'MOVE'}, this.onMove)
@@ -53,12 +51,10 @@ var CabinFSM = FSM.extend('CabinFSM', {
 			})
 		})
 		._(function(anyMessage){
-			console.log('CabinFSM received unattended message : ', anyMessage)
 			return this.next(this.idle)
 		})
 		.after(50000000, function(){
 			// this is useless
-			console.log('cabin idle timeout, sending notification again')
 			return this.next(this.idle)
 		})
 	},
@@ -71,22 +67,14 @@ var CabinFSM = FSM.extend('CabinFSM', {
 		var self = this
 		if (altDiff !== 0) {
 			// if the diff is positive, we are going up. negative -> down
-			console.log('onMove moveCommand', moveCommand)
-			console.log('onMove altDiff', altDiff)
 			travelTime = storeyTravelDuration(altDiff, this.hardware)
 			// Here, we must calculate the cabin movement according to the hardware
 			// configuration
-			console.log('onMove travelTime %sms', travelTime)
 			var moveStartedAt  = new Date
 			var moveFinishesAt = new Date
 			moveFinishesAt.setTime(moveStartedAt.getTime() + travelTime)
 			var intervalDuration = 200
 			var pixelsPerInterval = altDiff / (travelTime / intervalDuration)
-			console.log('pixelsPerInterval = %s / (%s / %s)', altDiff,travelTime,intervalDuration)
-			console.log('moveStartedAt ',moveStartedAt.getTime())
-			console.log('moveStartedAt ',moveStartedAt.getTime())
-			console.log('moveFinishesAt',moveFinishesAt.getTime())
-			console.log('pixelsPerInterval',pixelsPerInterval)
 
 			this.control.notifyStartingMove(this.currentAltitude, this.nextAltitude, travelTime)
 			// we set an interval that will notify the new altitutde every once in a
@@ -106,7 +94,6 @@ var CabinFSM = FSM.extend('CabinFSM', {
 			console.error('@todo emergency stopped')
 			clearInterval(self.movingInterval)
 		}).after(travelTime, function(){
-			console.error('cabin arrived')
 			clearInterval(self.movingInterval)
 			// we arrived so we set our altitude to our goal altitude
 			self.currentAltitude = self.nextAltitude
@@ -133,7 +120,6 @@ var CabinFSM = FSM.extend('CabinFSM', {
 		console.warn('@todo handle people')
 
 		return this.receive('reopen', function(){
-			console.log('asked to reopen')
 			return this.next(this.onGatesOpen)
 		})
 		.after(this.openAwaitingTime, function(){
@@ -142,7 +128,6 @@ var CabinFSM = FSM.extend('CabinFSM', {
 	},
 
 	closingGates: function() {
-		console.log('gates closing')
 		var now = new Date,
 		    waitTime = this.hardware.doors.closingDuration + this.closedAwaitingTime
 
@@ -155,9 +140,6 @@ var CabinFSM = FSM.extend('CabinFSM', {
 			var elapsed = Math.min(this.hardware.doors.closingDuration, (new Date).getTime() - now.getTime())
 			var elapsedRatio = this.hardware.doors.closingDuration / elapsed
 			var openingTime = this.hardware.doors.openingDuration / elapsedRatio
-			console.log('elapsed', elapsed)
-			console.log('elapsedRatio', elapsedRatio)
-			console.log('openingTime', openingTime)
 			this.control.notifyGatesOpening(openingTime)
 			return this.next(this.onGatesOpen, openingTime)
 		})
@@ -183,7 +165,6 @@ function storeyTravelDuration(verticalVector, hardware) {
 	// with a default traction force of 1 and going up = 1 * 1.2 = 1.2 this
 	// gives a time in seconds, for an arbitrary vector of 100px that we convert
 	// to milliseconds
-	console.log('%s * %s / 100 * 1000', timeMultiplier, verticalVector)
 	return (timeMultiplier * verticalVector / 100 * 1000) >> 0
 	// @todo use hardware.cabinWeight, hardware.tractionForce, hardware.counterWeight
 }

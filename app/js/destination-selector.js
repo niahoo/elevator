@@ -74,6 +74,16 @@ DestinationSelector.prototype.following = function(n) {
 	}
 }
 
+DestinationSelector.prototype.preceding = function(n) {
+	var dir = this.data.currentDirection()
+	console.log('called preceding %s, direction is %s',n,dir)
+	switch (dir) {
+		case direction.UP : return this.LowerThan(n)
+		case direction.DOWN : return this.higherThan(n)
+		default: throw new Error('bad direction')
+	}
+}
+
 // selects a floor if present
 DestinationSelector.prototype.checkFloor = function(n) {
 	var found = false
@@ -117,6 +127,47 @@ DestinationSelector.prototype.call = function(f) {
 
 DestinationSelector.prototype.min = function(n) {
 	this.setCandidates([Math.min.apply(null, this.candidates)])
+	return this
+}
+
+DestinationSelector.prototype.max = function(n) {
+	this.setCandidates([Math.max.apply(null, this.candidates)])
+	return this
+}
+
+DestinationSelector.prototype.nearest = function(n) {
+	// takes the candidates that has the lower range from the provided <n> floor
+	if (this.candidates.length === 0)
+		return this
+	var minRange = 99999
+	var nearest = null
+	for (var i = 0, c, range, l = this.candidates.length; i < l; i++) {
+		c = this.candidates[i], range = Math.abs(c - n)
+		if (range < minRange) {
+			minRange = range
+			nearest = c
+		}
+		break
+	}
+	this.setCandidates([nearest])
+	return this
+}
+
+DestinationSelector.prototype.farest = function(n) {
+	// takes the candidates that has the higher range from the provided <n> floor
+	if (this.candidates.length === 0)
+		return this
+	var maxRange = 0
+	var farest = null
+	for (var i = 0, c, range, l = this.candidates.length; i < l; i++) {
+		c = this.candidates[i], range = Math.abs(c - n)
+		if (range > maxRange) {
+			maxRange = range
+			farest = c
+		}
+		break
+	}
+	this.setCandidates([farest])
 	return this
 }
 
@@ -173,29 +224,39 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 	// null immediately
 
 //* USER INPUT START ---------------------------------------------------------
-		.trace('addWaypoints allWaypoints')
-		.addWaypoints(this.data.allWaypoints())        // addWaypoints allWaypoints
-		.trace('checkFloor currentFloor')
-		.checkFloor(this.data.currentFloor())                                // checkFloor currentFloor
-		.orElse(function(){                            // orElse # 1 start
-			return this                                // // inserted by the parser
-			.trace('addWaypoints waypointsCabin')
-			.addWaypoints(this.data.waypointsCabin())        // addWaypoints waypointsCabin
-			.trace('addWaypoints waypointsSameDirection')
-			.addWaypoints(this.data.waypointsSameDirection())      // addWaypoints waypointsSameDirection
-			// .trace('higherThan currentFloor')
-			// .higherThan(this.data.currentFloor())            // higherThan currentFloor
-			.trace('following currentFloor')
-			.following(this.data.currentFloor())            // higherThan currentFloor
-			.trace('min')
-			.min()                                         // min
-			.trace('orElse')
-			.orElse(function(){                            // orElse # 2 start
-				return this                                // // inserted by the parser
-				.trace('stop')
-				.stop()                                  // // stop
-			})                                             // orElse # 2 end
-		})                                             // orElse # 1 end
+		.trace('addWaypoints allWaypoints')                    // addWaypoints allWaypoints
+		.addWaypoints(this.data.allWaypoints())
+		.trace('checkFloor currentFloor')                      // checkFloor currentFloor
+		.checkFloor(this.data.currentFloor())
+		.orElse(function(){
+			return this
+			.trace('addWaypoints waypointsCabin')                 // addWaypoints waypointsCabin
+			.addWaypoints(this.data.waypointsCabin())
+			.trace('addWaypoints waypointsSameDirection')         // addWaypoints waypointsSameDirection
+			.addWaypoints(this.data.waypointsSameDirection())
+			.trace('following currentFloor')                      // following currentFloor
+			.following(this.data.currentFloor())
+			.trace('nearest')                                         // nearest currentFloor
+			.nearest(this.data.currentFloor())
+			.trace('orElse')                                      // orElse
+			.orElse(function(){
+				return this
+				.trace('addWaypoints waypointsCabin')
+				.addWaypoints(this.data.waypointsCabin())
+				.trace('addWaypoints waypointsOtherDirection')         // addWaypoints waypointsOtherDirection
+				.addWaypoints(this.data.waypointsOtherDirection())
+				.trace('following currentFloor')                      // following currentFloor
+				.following(this.data.currentFloor())
+				.trace('farest')                                         // farest currentFloor
+				.farest(this.data.currentFloor())
+				.trace('orElse')                                      // orElse
+				.orElse(function(){
+					return this
+					.trace('stop')                                       // stop
+					.stop()
+				})
+			})
+		})
 //* USER INPUT END -----------------------------------------------------------
 	}) // end of base wrapping
 
@@ -224,7 +285,13 @@ DataWrapper.prototype.waypointsSameDirection = function() {
 		case direction.DOWN : return this.waypointsDown()
 		default: throw new Error('bad direction')
 	}
-
+}
+DataWrapper.prototype.waypointsOtherDirection = function() {
+	switch (this.currentDirection()) {
+		case direction.DOWN : return this.waypointsUp()
+		case direction.UP : return this.waypointsDown()
+		default: throw new Error('bad direction')
+	}
 }
 
 module.exports = DestinationSelector
