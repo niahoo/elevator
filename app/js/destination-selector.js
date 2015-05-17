@@ -91,8 +91,9 @@ DestinationSelector.prototype.checkFloor = function(n) {
 		if (this.candidates[i] === n) found = true
 		break
 	}
+	// the floor is found in the waypoints, we set it as our candidate. If not
+	// foud, we set all the
 	if (found) {
-		// the floor is found in the waypoints, we set it as our candidate
 		this.setCandidates([n])
 	}
 	return this
@@ -224,12 +225,16 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 	// null immediately
 
 //* USER INPUT START ---------------------------------------------------------
+		// # Try the current floor
 		.trace('addWaypoints allWaypoints')                    // addWaypoints allWaypoints
 		.addWaypoints(this.data.allWaypoints())
 		.trace('checkFloor currentFloor')                      // checkFloor currentFloor
 		.checkFloor(this.data.currentFloor())
+		.trace('orElse')                                      // orElse
 		.orElse(function(){
 			return this
+			// # Try the following waypoints going in the same direction and
+			// # pick the closest
 			.trace('addWaypoints waypointsCabin')                 // addWaypoints waypointsCabin
 			.addWaypoints(this.data.waypointsCabin())
 			.trace('addWaypoints waypointsSameDirection')         // addWaypoints waypointsSameDirection
@@ -240,6 +245,8 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 			.nearest(this.data.currentFloor())
 			.trace('orElse')                                      // orElse
 			.orElse(function(){
+				// # Try the following waypoints going in the opposite direction
+				// # pick the farest so we will go all the way back
 				return this
 				.trace('addWaypoints waypointsCabin')
 				.addWaypoints(this.data.waypointsCabin())
@@ -251,6 +258,18 @@ function FAKE_COMPILED_USER_ALGORITHM() {
 				.farest(this.data.currentFloor())
 				.trace('orElse')                                      // orElse
 				.orElse(function(){
+					// # As we do not need to go in a following waypoint, we
+					// # will go back to a preceding waypoint, and follow the
+					// # same logic. Instead of retyping the whole algorithm in
+					// # the opposite direction, we will simply change our
+					// # direction and start over. Then, if nothing was found
+					// # the second time we reach this point, we do not want to
+					// # re-loop. So this commands sets a flag
+					.trace('changeDirection')
+					.trace('Loop')
+
+
+
 					return this
 					.trace('stop')                                       // stop
 					.stop()
