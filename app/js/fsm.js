@@ -3,7 +3,7 @@ var BaseClass = require('base-class-extend')
 var _ = {
 	isFinite: require('lodash/lang/isFinite'),
 	matches: require('lodash/utility/matches'),
-	cloneDeep: require('lodash/lang/cloneDeep')
+	clone: require('lodash/lang/clone')
 }
 var spawn = setImmediate // freezes too much
 // var spawn = requestAnimationFrame // too slow
@@ -119,6 +119,7 @@ var Proc = BaseClass.extend('Proc', {
 		return new Receive(this.__mailbox)._(fun)
 	},
 
+	//@todo : flushAll should be in sync, and return nothing.
 	flushAll: function(pattern, afterCallback) {
 		var cb = afterCallback || noop
 		console.log('%cflushing all messages', 'color:orange', pattern)
@@ -192,12 +193,6 @@ Receive.prototype.receive = function (pattern, callback) {
 }
 
 // matches anything (wildcard)
-Receive.prototype._ = function (callback) {
-	var predicate = alwaysTrue
-	this.clauses.push([alwaysTrue, callback])
-	return this
-}
-
 Receive.prototype._ = function (callback) {
 	return this.receive(alwaysTrue, callback)
 }
@@ -287,7 +282,7 @@ Mailbox.prototype.push = function (message) {
 	}
 }
 
-// accepts a clauses array such as defined per Receiv & returns a match context
+// accepts a clauses array such as defined per Receive & returns a match context
 // or undefined
 Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
 	ttrace('withMatch mailbox stack', this.stack)
@@ -324,7 +319,7 @@ Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
 
 	// onMessage should not be bound since the Receive promise wrapper should
 	// not be resolved until the following code is executed (or if the previous
-	// search matcses, onMessage won't be bound)
+	// search matches, onMessage won't be bound)
 	if (this.onMessage) {
 		console.error('onMessage already bound') //@todo remove this line
 		throw new Error('mailbox onMessage already bound')
@@ -346,7 +341,7 @@ Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
 					// If the message maches, we clear the timeout of the after-
 					// clause
 					// A clearTimeout should be useless as the promise can only
-					// be resolved once ; but doing so we dicard any debug trace
+					// be resolved once ; but doing so we discard any debug trace
 					// in the timeout callback. (@todo in production, no debug
 					// => no clearTimeout)
 					clearTimeout(timer)
@@ -356,7 +351,7 @@ Mailbox.prototype.withMatch = function (clauses, timeout, timeoutCallback) {
 						callback:callback
 					})
 					// we return true, which means that the message will not be
-					// pushed on the stack (as we use it now)
+					// pushed on the stack (as we consume it now)
 					return true
 				}
 			}
@@ -391,10 +386,9 @@ function Client(mailbox) {
 
 Client.prototype.send = function (message) {
 	var self = this
-	// @todo _.cloneDeep overkill ?
 	ttrace('send message',message)
 	// the message will be received asynchronously (spawn)
-	spawn(function(){ self.mailbox.push(_.cloneDeep(message)) })
+	spawn(function(){ self.mailbox.push(_.clone(message)) })
 }
 
 // -- API ---------------------------------------------------------------------
